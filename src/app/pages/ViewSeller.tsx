@@ -4,7 +4,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 
-// Mock sellers data with detailed information
+ 
 const sellers = [
   {
     id: 1,
@@ -171,7 +171,7 @@ export default function ViewSeller() {
 
   return (
     <div className="p-8">
-      {/* Header */}
+   
       <div className="mb-6">
         <Button
           variant="ghost"
@@ -220,8 +220,7 @@ export default function ViewSeller() {
           </div>
         </div>
       </div>
-
-      {/* Stats Cards */}
+ 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-6">
@@ -281,9 +280,9 @@ export default function ViewSeller() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
+ 
         <div className="lg:col-span-2 space-y-6">
-          {/* Properties List */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Properties ({seller.properties.length})</CardTitle>
@@ -358,8 +357,7 @@ export default function ViewSeller() {
               ))}
             </CardContent>
           </Card>
-
-          {/* Seller Notes */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Notes & Requirements</CardTitle>
@@ -382,10 +380,9 @@ export default function ViewSeller() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Sidebar */}
+ 
         <div className="space-y-6">
-          {/* Contact Information */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Contact Information</CardTitle>
@@ -414,8 +411,7 @@ export default function ViewSeller() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Account Details */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Account Details</CardTitle>
@@ -443,8 +439,7 @@ export default function ViewSeller() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Quick Actions */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>

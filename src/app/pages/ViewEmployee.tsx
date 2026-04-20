@@ -4,7 +4,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 
-// Mock employees data with detailed information
+ 
 const employees = [
   {
     id: 1,
@@ -181,7 +181,7 @@ export default function ViewEmployee() {
 
   return (
     <div className="p-8">
-      {/* Header */}
+ 
       <div className="mb-6">
         <Button
           variant="ghost"
@@ -228,8 +228,7 @@ export default function ViewEmployee() {
           </div>
         </div>
       </div>
-
-      {/* Performance Stats - Full Width Cards */}
+ 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
           <CardContent className="p-6">
@@ -291,9 +290,9 @@ export default function ViewEmployee() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
+ 
         <div className="lg:col-span-2 space-y-6">
-          {/* Contact Information */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Contact Information</CardTitle>
@@ -331,8 +330,7 @@ export default function ViewEmployee() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Skills & Qualifications */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Skills & Qualifications</CardTitle>
@@ -364,8 +362,7 @@ export default function ViewEmployee() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Recent Deals */}
+ 
           {employee.recentDeals.length > 0 && (
             <Card>
               <CardHeader>
@@ -404,10 +401,9 @@ export default function ViewEmployee() {
             </Card>
           )}
         </div>
-
-        {/* Sidebar */}
+ 
         <div className="space-y-6">
-          {/* Employment Details */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Employment Details</CardTitle>
@@ -442,8 +438,7 @@ export default function ViewEmployee() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Performance Metrics */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Performance Metrics</CardTitle>
@@ -476,8 +471,7 @@ export default function ViewEmployee() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Quick Actions */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>

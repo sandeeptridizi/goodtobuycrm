@@ -109,15 +109,13 @@ export default function Enquiries() {
 
   const getFilteredEnquiries = () => {
     let filtered = enquiries;
-
-    // Filter by tab
+ 
     if (activeTab !== "all") {
       filtered = filtered.filter(
         (enq) => enq.status.toLowerCase() === activeTab.toLowerCase()
       );
     }
-
-    // Filter by search
+ 
     filtered = filtered.filter(
       (enq) =>
         enq.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -150,8 +148,7 @@ export default function Enquiries() {
         <h1 className="text-3xl font-bold text-gray-900">Enquiries</h1>
         <p className="text-gray-500 mt-2">Manage inbound property enquiries</p>
       </div>
-
-      {/* Search */}
+ 
       <div className="flex gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -163,8 +160,7 @@ export default function Enquiries() {
           />
         </div>
       </div>
-
-      {/* Tabs */}
+ 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="all">All</TabsTrigger>

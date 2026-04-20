@@ -90,7 +90,7 @@ export default function Buyers() {
 
   return (
     <div className="p-8 min-h-screen">
-      {/* Header with AI Badge */}
+ 
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -185,8 +185,7 @@ export default function Buyers() {
           </DialogContent>
         </Dialog>
       </div>
-
-      {/* Search */}
+ 
       <div className="flex gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#00AEEF] w-5 h-5" />
@@ -198,8 +197,7 @@ export default function Buyers() {
           />
         </div>
       </div>
-
-      {/* Buyers List */}
+ 
       <div className="space-y-3">
         {filteredBuyers.map((buyer) => (
           <Card 
@@ -209,7 +207,7 @@ export default function Buyers() {
           >
             <CardContent className="p-5">
               <div className="flex items-center gap-8">
-                {/* Avatar & Name */}
+ 
                 <div className="flex items-center gap-3 w-64">
                   <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#0096d1] flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#00AEEF]/30">
                     <span className="text-white font-semibold text-sm">
@@ -231,26 +229,22 @@ export default function Buyers() {
                     </span>
                   </div>
                 </div>
-
-                {/* Phone */}
+ 
                 <div className="flex items-center gap-2 text-sm text-slate-600 w-48">
                   <Phone className="w-4 h-4 flex-shrink-0 text-[#00AEEF]" />
                   <span>{buyer.phone}</span>
                 </div>
-
-                {/* Budget */}
+ 
                 <div className="w-52">
                   <span className="text-xs text-slate-500 font-medium">Budget</span>
                   <p className="text-sm font-semibold text-[#004274] truncate">{buyer.budget}</p>
                 </div>
-
-                {/* Preferences */}
+ 
                 <div className="flex-1 min-w-0">
                   <span className="text-xs text-slate-500 font-medium">Preferences</span>
                   <p className="text-sm font-semibold text-[#004274] truncate">{buyer.preferences}</p>
                 </div>
-
-                {/* Lead Source */}
+ 
                 <div className="w-40">
                   <span className="text-xs text-slate-500 font-medium">Lead Source</span>
                   <p className="text-sm font-semibold text-[#004274]">{buyer.leadSource}</p>

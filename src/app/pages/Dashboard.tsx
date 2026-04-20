@@ -89,7 +89,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-8 min-h-screen">
-      {/* Header with AI Badge */}
+ 
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-[#004274] to-[#00AEEF] bg-clip-text text-transparent">Dashboard</h1>
@@ -100,8 +100,7 @@ export default function Dashboard() {
         </div>
         <p className="text-slate-600">Welcome back! Here's your AI-powered property management overview.</p>
       </div>
-
-      {/* Stats Grid */}
+ 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         {stats.map((stat) => (
           <Card key={stat.name} className="border-[#00AEEF]/10 hover:border-[#00AEEF]/30 transition-all hover:shadow-xl bg-white/80 backdrop-blur-sm">
@@ -126,7 +125,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Enquiries */}
+ 
         <div className="border border-[#00AEEF]/10 rounded-xl p-6 bg-white/80 backdrop-blur-sm shadow-lg">
           <div className="flex items-center gap-2 mb-4">
             <h2 className="text-xl font-semibold text-[#004274]">Recent Enquiries</h2>
@@ -153,8 +152,7 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-
-        {/* Recent Buyers */}
+ 
         <div className="border border-[#00AEEF]/10 rounded-xl p-6 bg-white/80 backdrop-blur-sm shadow-lg">
           <div className="flex items-center gap-2 mb-4">
             <h2 className="text-xl font-semibold text-[#004274]">Recent Buyers</h2>

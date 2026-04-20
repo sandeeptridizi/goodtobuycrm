@@ -92,7 +92,7 @@ export default function Properties() {
 
   return (
     <div className="p-8 min-h-screen">
-      {/* Header with AI Badge */}
+ 
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -112,8 +112,7 @@ export default function Properties() {
           Add Property
         </Button>
       </div>
-
-      {/* Search and Filters */}
+ 
       <div className="flex gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#00AEEF] w-5 h-5" />
@@ -129,8 +128,7 @@ export default function Properties() {
           Filters
         </Button>
       </div>
-
-      {/* Properties Grid */}
+ 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProperties.map((property) => (
           <Card 

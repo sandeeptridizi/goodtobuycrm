@@ -107,7 +107,7 @@ export default function CreateProperty() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission here
+ 
     console.log("Form submitted with amenities:", selectedAmenities);
     console.log("Images:", images);
     console.log("Videos:", videos);
@@ -191,8 +191,7 @@ export default function CreateProperty() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Location Details */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Location Details</CardTitle>
@@ -252,8 +251,7 @@ export default function CreateProperty() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Property Specifications */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Property Specifications</CardTitle>
@@ -344,8 +342,7 @@ export default function CreateProperty() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Utilities & Infrastructure */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Utilities & Infrastructure</CardTitle>
@@ -396,8 +393,7 @@ export default function CreateProperty() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Amenities */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Amenities</CardTitle>
@@ -424,8 +420,7 @@ export default function CreateProperty() {
                     ))}
                   </div>
                 </div>
-
-                {/* Community Amenities */}
+ 
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">Community Features</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -446,7 +441,6 @@ export default function CreateProperty() {
                   </div>
                 </div>
 
-                {/* Building Amenities */}
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">Building Features</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -469,15 +463,14 @@ export default function CreateProperty() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Media Uploads */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Media Uploads</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {/* Image Upload */}
+ 
                 <div>
                   <Label htmlFor="images">Upload Images</Label>
                   <p className="text-sm text-gray-500 mb-2">Add photos of the property (Max 20 images)</p>
@@ -522,7 +515,6 @@ export default function CreateProperty() {
                   )}
                 </div>
 
-                {/* Video Upload */}
                 <div>
                   <Label htmlFor="videos">Upload Videos</Label>
                   <p className="text-sm text-gray-500 mb-2">Add video tours of the property (Max 5 videos)</p>
@@ -569,8 +561,7 @@ export default function CreateProperty() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Social Media & Video Links */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Social Media & Video Links</CardTitle>
@@ -600,8 +591,7 @@ export default function CreateProperty() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Form Actions */}
+ 
           <div className="flex justify-end gap-4">
             <Button
               type="button"

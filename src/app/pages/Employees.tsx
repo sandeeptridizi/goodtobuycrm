@@ -174,8 +174,7 @@ export default function Employees() {
           </DialogContent>
         </Dialog>
       </div>
-
-      {/* Search */}
+ 
       <div className="flex gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -187,8 +186,7 @@ export default function Employees() {
           />
         </div>
       </div>
-
-      {/* Employees Grid */}
+ 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         {filteredEmployees.map((employee) => (
           <Card 

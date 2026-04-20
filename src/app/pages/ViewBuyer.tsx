@@ -5,7 +5,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 
-// Mock buyers data with detailed requirements
+ 
 const buyers = [
   {
     id: 1,
@@ -78,7 +78,7 @@ const buyers = [
   },
 ];
 
-// Properties data for matching
+ 
 const properties = [
   {
     id: 1,
@@ -181,8 +181,7 @@ const properties = [
     matchScore: 87,
   },
 ];
-
-// Function to find matching properties for a buyer
+ 
 const findMatchingProperties = (buyer: any) => {
   return properties.filter(property => {
     const propertyPrice = parseInt(property.price.replace(/[₹,]/g, ''));
@@ -206,11 +205,9 @@ export default function ViewBuyer() {
   const buyer = buyers.find(b => b.id === Number(id));
   const [propertyScrollPosition, setPropertyScrollPosition] = useState(0);
   const propertyScrollRef = useRef<HTMLDivElement>(null);
-
-  // Get matching properties
+ 
   const matchingProperties = buyer ? findMatchingProperties(buyer) : [];
-
-  // Auto-scroll properties horizontally every 3 seconds
+ 
   useEffect(() => {
     if (!matchingProperties.length || !propertyScrollRef.current) return;
 
@@ -229,7 +226,7 @@ export default function ViewBuyer() {
     return () => clearInterval(interval);
   }, [matchingProperties.length]);
 
-  // Apply scroll position
+ 
   useEffect(() => {
     if (propertyScrollRef.current) {
       propertyScrollRef.current.scrollTo({
@@ -252,7 +249,7 @@ export default function ViewBuyer() {
 
   return (
     <div className="p-8">
-      {/* Header */}
+ 
       <div className="mb-6">
         <Button
           variant="ghost"
@@ -302,9 +299,9 @@ export default function ViewBuyer() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
+ 
         <div className="lg:col-span-2 space-y-6">
-          {/* Contact Information */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Contact Information</CardTitle>
@@ -333,8 +330,7 @@ export default function ViewBuyer() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Budget & Requirements */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Budget & Requirements</CardTitle>
@@ -412,8 +408,7 @@ export default function ViewBuyer() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Notes */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Notes</CardTitle>
@@ -423,10 +418,9 @@ export default function ViewBuyer() {
             </CardContent>
           </Card>
         </div>
-
-        {/* Sidebar */}
+ 
         <div className="space-y-6">
-          {/* Timeline */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Purchase Timeline</CardTitle>
@@ -441,8 +435,7 @@ export default function ViewBuyer() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Lead Information */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Lead Information</CardTitle>
@@ -464,8 +457,7 @@ export default function ViewBuyer() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Match Statistics */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Match Statistics</CardTitle>
@@ -489,8 +481,7 @@ export default function ViewBuyer() {
           </Card>
         </div>
       </div>
-
-      {/* Matching Properties Section - Full Width at Bottom */}
+ 
       {matchingProperties.length > 0 && (
         <Card className="mt-6">
           <CardHeader>

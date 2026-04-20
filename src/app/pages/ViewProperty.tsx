@@ -4,8 +4,7 @@ import { ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Home, Car, Droplet, Shi
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
-
-// Mock data - will be replaced with actual data from database
+ 
 const properties = [
   {
     id: 1,
@@ -115,8 +114,7 @@ const properties = [
     addedDate: "2026-03-05",
   },
 ];
-
-// Mock buyers data with requirements
+ 
 const buyers = [
   {
     id: 1,
@@ -185,7 +183,7 @@ const buyers = [
   },
 ];
 
-// Function to find matching buyers for a property
+ 
 const findMatchingBuyers = (property: any) => {
   const propertyPrice = parseInt(property.price.replace(/[₹,]/g, ''));
   
@@ -209,8 +207,7 @@ export default function ViewProperty() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [buyerScrollPosition, setBuyerScrollPosition] = useState(0);
   const buyerScrollRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll images every 3 seconds
+ 
   useEffect(() => {
     if (!property || property.images.length <= 1) return;
     
@@ -221,10 +218,10 @@ export default function ViewProperty() {
     return () => clearInterval(interval);
   }, [property]);
 
-  // Get matching buyers
+ 
   const matchingBuyers = property ? findMatchingBuyers(property) : [];
 
-  // Auto-scroll buyers horizontally every 3 seconds
+   
   useEffect(() => {
     if (!matchingBuyers.length || !buyerScrollRef.current) return;
 
@@ -243,7 +240,7 @@ export default function ViewProperty() {
     return () => clearInterval(interval);
   }, [matchingBuyers.length]);
 
-  // Apply scroll position
+   
   useEffect(() => {
     if (buyerScrollRef.current) {
       buyerScrollRef.current.scrollTo({
@@ -273,8 +270,7 @@ export default function ViewProperty() {
       </div>
     );
   }
-
-  // Get the main image and the next 4 images for the row
+ 
   const mainImage = property.images[currentImageIndex];
   const thumbnailImages = [];
   for (let i = 1; i <= 4; i++) {
@@ -284,7 +280,7 @@ export default function ViewProperty() {
 
   return (
     <div className="p-8">
-      {/* Header */}
+ 
       <div className="mb-6">
         <Button
           variant="ghost"
@@ -317,8 +313,7 @@ export default function ViewProperty() {
           <span className="text-lg text-gray-600">{property.type}</span>
         </div>
       </div>
-
-      {/* Image Gallery */}
+ 
       <Card className="mb-6">
         <CardContent className="p-0">
           <div className="p-2 space-y-2">
@@ -346,7 +341,7 @@ export default function ViewProperty() {
                 </Button>
               </div>
             </div>
-            {/* Thumbnail Row */}
+ 
             <div className="grid grid-cols-4 gap-2">
               {thumbnailImages.map((image, index) => (
                 <div key={index} className="h-32">
@@ -363,9 +358,9 @@ export default function ViewProperty() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
+ 
         <div className="lg:col-span-2 space-y-6">
-          {/* Description */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Description</CardTitle>
@@ -374,8 +369,7 @@ export default function ViewProperty() {
               <p className="text-gray-700 leading-relaxed">{property.description}</p>
             </CardContent>
           </Card>
-
-          {/* Property Details */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Property Details</CardTitle>
@@ -485,8 +479,7 @@ export default function ViewProperty() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Amenities */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Amenities</CardTitle>
@@ -501,8 +494,7 @@ export default function ViewProperty() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Video Links */}
+ 
           {(property.youtubeUrl || property.instagramUrl) && (
             <Card>
               <CardHeader>
@@ -545,10 +537,9 @@ export default function ViewProperty() {
             </Card>
           )}
         </div>
-
-        {/* Sidebar */}
+ 
         <div className="space-y-6">
-          {/* Agent Information Card */}
+ 
           <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
             <CardHeader>
               <CardTitle className="text-blue-900">Listed By</CardTitle>
@@ -593,8 +584,7 @@ export default function ViewProperty() {
               </Button>
             </CardContent>
           </Card>
-
-          {/* Contact Card */}
+ 
           <Card>
             <CardHeader>
               <CardTitle>Interested in this property?</CardTitle>
@@ -606,8 +596,7 @@ export default function ViewProperty() {
           </Card>
         </div>
       </div>
-
-      {/* Matching Buyers Section - Full Width at Bottom */}
+ 
       {matchingBuyers.length > 0 && (
         <Card className="mt-6">
           <CardHeader>
