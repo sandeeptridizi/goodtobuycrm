@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, X, Video, Image as ImageIcon } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -7,7 +7,7 @@ import { Label } from "../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { useProperties } from "../../hooks/useProperties";
+import { useProperty, useProperties } from "../../hooks/useProperties";
 import { toast } from "sonner";
 
 const amenitiesOptions = {
@@ -53,11 +53,13 @@ const amenitiesOptions = {
   ],
 };
 
-export default function CreateProperty() {
+export default function EditProperty() {
   const navigate = useNavigate();
-  const { create } = useProperties();
+  const { id } = useParams();
+  const propertyId = Number(id);
+  const { data: property, loading: propertyLoading, error: propertyError } = useProperty(propertyId);
+  const { update } = useProperties();
 
-  // Form state
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -81,16 +83,49 @@ export default function CreateProperty() {
     waterSource: "",
     drainType: "",
     boundary: "",
+    status: "",
     youtubeUrl: "",
     instagramUrl: "",
   });
 
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
-  const [images, setImages] = useState<File[]>([]);
-  const [videos, setVideos] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [videoPreviews, setVideoPreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (property) {
+      setFormData({
+        title: property.title || "",
+        description: property.description || "",
+        propertyType: property.type || "",
+        price: property.price?.toString() || "",
+        rentalIncome: property.rental_income?.toString() || "",
+        address: property.address || "",
+        city: property.city || "",
+        country: property.country || "",
+        zipCode: property.zip_code || "",
+        facing: property.facing || "",
+        bedrooms: property.bedrooms?.toString() || "",
+        bathrooms: property.bathrooms?.toString() || "",
+        area: property.area?.toString() || "",
+        landArea: property.land_area?.toString() || "",
+        yearBuilt: property.year_built?.toString() || "",
+        buildingAge: property.building_age?.toString() || "",
+        floors: property.floors?.toString() || "",
+        carParking: property.car_parking?.toString() || "",
+        parkingSize: property.parking_size?.toString() || "",
+        waterSource: property.water_source || "",
+        drainType: property.drain_type || "",
+        boundary: property.boundary_wall || "",
+        status: property.status || "",
+        youtubeUrl: property.youtube_url || "",
+        instagramUrl: property.instagram_url || "",
+      });
+      setSelectedAmenities(property.amenities || []);
+      setImagePreviews(property.images || []);
+    }
+  }, [property]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -111,8 +146,6 @@ export default function CreateProperty() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setImages(prev => [...prev, ...files]);
-
     files.forEach(file => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -122,27 +155,8 @@ export default function CreateProperty() {
     });
   };
 
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setVideos(prev => [...prev, ...files]);
-
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setVideoPreviews(prev => [...prev, reader.result as string]);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
   const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const removeVideo = (index: number) => {
-    setVideos(prev => prev.filter((_, i) => i !== index));
-    setVideoPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const parsePrice = (priceStr: string): number => {
@@ -158,16 +172,6 @@ export default function CreateProperty() {
       return;
     }
 
-    if (!formData.propertyType) {
-      toast.error("Please select a property type");
-      return;
-    }
-
-    if (!formData.price.trim()) {
-      toast.error("Please enter a price");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -176,7 +180,7 @@ export default function CreateProperty() {
         description: formData.description,
         type: formData.propertyType,
         price: parsePrice(formData.price),
-        status: "Available",
+        status: formData.status,
         address: formData.address,
         city: formData.city,
         country: formData.country,
@@ -201,30 +205,52 @@ export default function CreateProperty() {
         instagram_url: formData.instagramUrl,
       };
 
-      await create(propertyData);
-      toast.success("Property created successfully!");
-      navigate("/properties");
+      await update(propertyId, propertyData);
+      toast.success("Property updated successfully!");
+      navigate(`/properties/${propertyId}`);
     } catch (error) {
-      console.error("Failed to create property:", error);
-      toast.error("Failed to create property. Please try again.");
+      console.error("Failed to update property:", error);
+      toast.error("Failed to update property. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (propertyLoading) {
+    return (
+      <div className="p-8 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#00AEEF] border-t-transparent mx-auto mb-4"></div>
+          <p className="text-slate-500">Loading property...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (propertyError || !property) {
+    return (
+      <div className="p-8 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Property Not Found</h1>
+          <Button onClick={() => navigate("/properties")}>Back to Properties</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 min-h-0">
       <div className="mb-6">
         <Button
           variant="ghost"
-          onClick={() => navigate("/properties")}
+          onClick={() => navigate(`/properties/${propertyId}`)}
           className="gap-2 mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Properties
+          Back to Property
         </Button>
-        <h1 className="text-3xl font-bold text-gray-900">Add New Property</h1>
-        <p className="text-gray-500 mt-2">Fill in the details to list a new property</p>
+        <h1 className="text-3xl font-bold text-gray-900">Edit Property</h1>
+        <p className="text-gray-500 mt-2">Update property details</p>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -272,6 +298,19 @@ export default function CreateProperty() {
                       <SelectItem value="penthouse">Penthouse</SelectItem>
                       <SelectItem value="commercial">Commercial</SelectItem>
                       <SelectItem value="land">Land</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => handleSelectChange("status", value)}>
+                    <SelectTrigger id="status" className="mt-1">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Available">Available</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Sold">Sold</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -551,15 +590,11 @@ export default function CreateProperty() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {/* Apartment/Unit Amenities */}
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">Apartment/Unit Features</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {amenitiesOptions.apartment.map((amenity) => (
-                      <label
-                        key={amenity}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
+                      <label key={amenity} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedAmenities.includes(amenity)}
@@ -576,10 +611,7 @@ export default function CreateProperty() {
                   <h3 className="font-semibold text-gray-900 mb-3">Community Features</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {amenitiesOptions.community.map((amenity) => (
-                      <label
-                        key={amenity}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
+                      <label key={amenity} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedAmenities.includes(amenity)}
@@ -596,10 +628,7 @@ export default function CreateProperty() {
                   <h3 className="font-semibold text-gray-900 mb-3">Building Features</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {amenitiesOptions.building.map((amenity) => (
-                      <label
-                        key={amenity}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
+                      <label key={amenity} className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedAmenities.includes(amenity)}
@@ -621,7 +650,6 @@ export default function CreateProperty() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-
                 <div>
                   <Label htmlFor="images">Upload Images</Label>
                   <p className="text-sm text-gray-500 mb-2">Add photos of the property (Max 20 images)</p>
@@ -656,50 +684,6 @@ export default function CreateProperty() {
                           <button
                             type="button"
                             onClick={() => removeImage(index)}
-                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="videos">Upload Videos</Label>
-                  <p className="text-sm text-gray-500 mb-2">Add video tours of the property (Max 5 videos)</p>
-                  <div className="mt-2">
-                    <label htmlFor="videos" className="cursor-pointer">
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-500 transition-colors">
-                        <div className="flex flex-col items-center gap-2">
-                          <Video className="w-8 h-8 text-gray-400" />
-                          <p className="text-sm text-gray-600">Click to upload videos</p>
-                          <p className="text-xs text-gray-400">MP4, MOV, AVI up to 100MB each</p>
-                        </div>
-                      </div>
-                    </label>
-                    <Input
-                      id="videos"
-                      type="file"
-                      multiple
-                      accept="video/*"
-                      onChange={handleVideoUpload}
-                      className="hidden"
-                    />
-                  </div>
-                  {videoPreviews.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
-                      {videoPreviews.map((preview, index) => (
-                        <div key={index} className="relative group">
-                          <video
-                            src={preview}
-                            className="w-full h-32 object-cover rounded-lg border border-gray-200"
-                            controls
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeVideo(index)}
                             className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <X className="w-4 h-4" />
@@ -753,13 +737,13 @@ export default function CreateProperty() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/properties")}
+              onClick={() => navigate(`/properties/${propertyId}`)}
               disabled={isSubmitting}
             >
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Property"}
+              {isSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </div>

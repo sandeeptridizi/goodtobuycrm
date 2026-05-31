@@ -1,23 +1,84 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Plus, Search, Filter, MapPin, Bed, Bath, Square, Sparkles } from "lucide-react";
+import { Plus, Search, Filter, MapPin, Bed, Bath, Square, Sparkles, X, SlidersHorizontal } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Checkbox } from "../components/ui/checkbox";
+import { Label } from "../components/ui/label";
+import { Slider } from "../components/ui/slider";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../components/ui/dialog";
 import { useProperties, Property } from "../../hooks/useProperties";
 import { formatPrice } from "../../hooks/useDashboard";
 
 export default function Properties() {
   const { data: properties, loading, error } = useProperties();
   const [searchTerm, setSearchTerm] = useState("");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const navigate = useNavigate();
 
-  const filteredProperties = properties.filter(
-    (property: Property) =>
+  // Filter states
+  const [filters, setFilters] = useState({
+    status: [] as string[],
+    type: [] as string[],
+    bedrooms: [] as number[],
+    priceRange: [0, 1000000000] as [number, number],
+  });
+
+  const statusOptions = ["Available", "Pending", "Sold"];
+  const typeOptions = ["house", "apartment", "villa", "penthouse", "commercial", "land"];
+  const bedroomOptions = [1, 2, 3, 4, 5];
+
+  const toggleFilter = (category: "status" | "type" | "bedrooms", value: string | number) => {
+    setFilters((prev) => {
+      const current = prev[category] as (string | number)[];
+      if (current.includes(value)) {
+        return { ...prev, [category]: current.filter((v) => v !== value) };
+      } else {
+        return { ...prev, [category]: [...current, value] };
+      }
+    });
+  };
+
+  const resetFilters = () => {
+    setFilters({
+      status: [],
+      type: [],
+      bedrooms: [],
+      priceRange: [0, 1000000000],
+    });
+  };
+
+  const activeFilterCount = filters.status.length + filters.type.length + filters.bedrooms.length;
+
+  const filteredProperties = properties.filter((property: Property) => {
+    // Search filter
+    const matchesSearch =
       property.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       property.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      property.address.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      property.address.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Status filter
+    const matchesStatus = filters.status.length === 0 || filters.status.includes(property.status);
+
+    // Type filter
+    const matchesType = filters.type.length === 0 || filters.type.includes(property.type);
+
+    // Bedrooms filter
+    const matchesBedrooms = filters.bedrooms.length === 0 || filters.bedrooms.includes(property.bedrooms);
+
+    // Price filter
+    const matchesPrice = property.price >= filters.priceRange[0] && property.price <= filters.priceRange[1];
+
+    return matchesSearch && matchesStatus && matchesType && matchesBedrooms && matchesPrice;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -66,11 +127,176 @@ export default function Properties() {
             className="pl-11 border-[#00AEEF]/20 focus:border-[#00AEEF] focus:ring-[#00AEEF]/20 bg-white/80 backdrop-blur-sm"
           />
         </div>
-        <Button variant="outline" className="gap-2 border-[#00AEEF]/20 hover:border-[#00AEEF] hover:bg-[#00AEEF]/5">
-          <Filter className="w-4 h-4 text-[#00AEEF]" />
-          Filters
-        </Button>
+        <Dialog open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+          <DialogTrigger asChild>
+            <Button
+              variant="outline"
+              className={`gap-2 border-[#00AEEF]/20 hover:border-[#00AEEF] hover:bg-[#00AEEF]/10 ${
+                activeFilterCount > 0 ? "bg-[#00AEEF]/10 text-[#00AEEF]" : "text-slate-600"
+              }`}
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+              Filters
+              {activeFilterCount > 0 && (
+                <Badge className="ml-1 h-5 w-5 p-0 justify-center items-center rounded-full bg-[#00AEEF] text-white text-xs">
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <SlidersHorizontal className="w-5 h-5 text-[#00AEEF]" />
+                  Filter Properties
+                </span>
+                {activeFilterCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={resetFilters} className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                    Reset All
+                  </Button>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+              {/* Status Filter */}
+              <div>
+                <Label className="text-base font-semibold text-slate-800 mb-3 block">Status</Label>
+                <div className="flex flex-wrap gap-2">
+                  {statusOptions.map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => toggleFilter("status", status)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        filters.status.includes(status)
+                          ? status === "Available"
+                            ? "bg-green-500 text-white"
+                            : status === "Pending"
+                            ? "bg-yellow-500 text-white"
+                            : "bg-red-500 text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Property Type Filter */}
+              <div>
+                <Label className="text-base font-semibold text-slate-800 mb-3 block">Property Type</Label>
+                <div className="flex flex-wrap gap-2">
+                  {typeOptions.map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => toggleFilter("type", type)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium capitalize transition-all ${
+                        filters.type.includes(type)
+                          ? "bg-[#00AEEF] text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bedrooms Filter */}
+              <div>
+                <Label className="text-base font-semibold text-slate-800 mb-3 block">Bedrooms</Label>
+                <div className="flex flex-wrap gap-2">
+                  {bedroomOptions.map((bed) => (
+                    <button
+                      key={bed}
+                      onClick={() => toggleFilter("bedrooms", bed)}
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        filters.bedrooms.includes(bed)
+                          ? "bg-[#00AEEF] text-white"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                    >
+                      {bed}+ Beds
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Range Filter */}
+              <div>
+                <Label className="text-base font-semibold text-slate-800 mb-3 block">
+                  Price Range
+                </Label>
+                <div className="px-2">
+                  <Slider
+                    value={filters.priceRange}
+                    onValueChange={(value) => setFilters((prev) => ({ ...prev, priceRange: value as [number, number] }))}
+                    min={0}
+                    max={1000000000}
+                    step={1000000}
+                    className="mt-4"
+                  />
+                  <div className="flex justify-between mt-2 text-sm text-slate-600">
+                    <span>{formatPrice(filters.priceRange[0])}</span>
+                    <span>{filters.priceRange[1] >= 1000000000 ? "₹100 Cr+" : formatPrice(filters.priceRange[1])}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-4 pt-4 border-t">
+              <Button variant="outline" onClick={() => setIsFilterOpen(false)} className="flex-1">
+                Cancel
+              </Button>
+              <Button onClick={() => setIsFilterOpen(false)} className="flex-1 bg-gradient-to-r from-[#00AEEF] to-[#0096d1]">
+                Apply Filters ({filteredProperties.length})
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
+
+      {/* Active Filters Display */}
+      {activeFilterCount > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <span className="text-sm text-slate-500">Active filters:</span>
+          {filters.status.map((status) => (
+            <Badge
+              key={status}
+              variant="secondary"
+              className="gap-1 px-2 py-1 cursor-pointer hover:bg-slate-200"
+              onClick={() => toggleFilter("status", status)}
+            >
+              {status}
+              <X className="w-3 h-3" />
+            </Badge>
+          ))}
+          {filters.type.map((type) => (
+            <Badge
+              key={type}
+              variant="secondary"
+              className="gap-1 px-2 py-1 capitalize cursor-pointer hover:bg-slate-200"
+              onClick={() => toggleFilter("type", type)}
+            >
+              {type}
+              <X className="w-3 h-3" />
+            </Badge>
+          ))}
+          {filters.bedrooms.map((bed) => (
+            <Badge
+              key={bed}
+              variant="secondary"
+              className="gap-1 px-2 py-1 cursor-pointer hover:bg-slate-200"
+              onClick={() => toggleFilter("bedrooms", bed)}
+            >
+              {bed}+ Beds
+              <X className="w-3 h-3" />
+            </Badge>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -91,7 +317,7 @@ export default function Properties() {
         </div>
       ) : filteredProperties.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-slate-400">No properties found. Add your first property!</p>
+          <p className="text-slate-400">No properties found. Try adjusting your filters.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -141,7 +367,7 @@ export default function Properties() {
                   <span className="text-2xl font-bold bg-gradient-to-r from-[#004274] to-[#00AEEF] bg-clip-text text-transparent">
                     {formatPrice(property.price)}
                   </span>
-                  <span className="text-sm text-slate-500 font-semibold px-3 py-1 rounded-full bg-[#00AEEF]/10">
+                  <span className="text-sm text-slate-500 font-semibold px-3 py-1 rounded-full bg-[#00AEEF]/10 capitalize">
                     {property.type}
                   </span>
                 </div>

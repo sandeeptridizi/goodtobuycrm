@@ -31,7 +31,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // Create buyer
-router.post('/', authMiddleware, async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const {
       name, email, phone, budget_min, budget_max, property_types,
@@ -49,10 +49,26 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
       RETURNING *`,
       [
-        name, email, phone, budget_min, budget_max, property_types || [],
-        min_bedrooms || 0, max_bedrooms || 10, min_bathrooms || 0, max_bathrooms || 10,
-        min_area || 0, preferred_locations || [], avatar, status || 'Active', lead_source,
-        notes, timeline, financing, amenities_required || []
+        name,
+        email || null,
+        phone,
+        budget_min || null,
+        budget_max || null,
+        property_types || [],
+        min_bedrooms || 0,
+        max_bedrooms || 10,
+        min_bathrooms || 0,
+        max_bathrooms || 10,
+        min_area || 0,
+        preferred_locations || [],
+        avatar || null,
+        status || 'Active',
+        lead_source || null,
+        notes || null,
+        timeline || null,
+        financing || null,
+        amenities_required || [],
+        assigned_agent || null
       ]
     );
     res.status(201).json(result.rows[0]);
@@ -63,17 +79,31 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
 });
 
 // Update buyer
-router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const fields = req.body;
     const fieldKeys = Object.keys(fields);
-    const fieldValues = Object.values(fields);
+    const fieldValues: unknown[] = Object.values(fields);
+
+    // Convert array fields to PostgreSQL array format
+    const processedValues = fieldValues.map((value) => {
+      if (Array.isArray(value)) {
+        // Convert JS array to PostgreSQL array format: {item1,item2}
+        if (value.length === 0) return '{}';
+        return `{${value.map(v => `"${String(v).replace(/"/g, '\\"')}"`).join(',')}}`;
+      }
+      // Convert 0 to null for foreign key fields to avoid FK violations
+      if (value === 0 || value === "0") {
+        return null;
+      }
+      return value;
+    });
 
     const setClause = fieldKeys.map((key, i) => `${key} = $${i + 1}`).join(', ');
     const result = await query(
       `UPDATE buyers SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${fieldKeys.length + 1} RETURNING *`,
-      [...fieldValues, id]
+      [...processedValues, id]
     );
 
     if (result.rows.length === 0) {
@@ -87,7 +117,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
 });
 
 // Delete buyer
-router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const result = await query('DELETE FROM buyers WHERE id = $1 RETURNING id', [id]);

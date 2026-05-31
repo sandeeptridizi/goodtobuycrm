@@ -28,7 +28,7 @@ export default function DashboardLayout() {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
-      <aside className="w-64 bg-gradient-to-b from-[#004274] to-[#002847] border-r border-white/10 shadow-2xl">
+      <aside className="w-64 fixed top-0 left-0 h-screen bg-gradient-to-b from-[#004274] to-[#002847] border-r border-white/10 shadow-2xl z-10">
         <div className="flex flex-col h-full">
           <div className="p-6 border-b border-gray-200 bg-white">
             <ImageWithFallback
@@ -38,7 +38,7 @@ export default function DashboardLayout() {
             />
           </div>
 
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -87,7 +87,7 @@ export default function DashboardLayout() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 ml-64 overflow-y-auto">
         <Outlet />
       </main>
     </div>

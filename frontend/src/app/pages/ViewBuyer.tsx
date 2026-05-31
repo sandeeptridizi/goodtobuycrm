@@ -1,11 +1,13 @@
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft, Mail, Phone, User, DollarSign, MapPin, Home, Bed, Bath, Building, Square, Calendar, Car, Sparkles } from "lucide-react";
+import { ArrowLeft, Mail, Phone, User, DollarSign, MapPin, Home, Bed, Bath, Building, Square, Calendar, Car, Sparkles, Edit, Trash2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
-import { useBuyer, Buyer } from "../../hooks/useBuyers";
-import { Property, useMatchingProperties } from "../../hooks/useProperties";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog";
+import { useBuyer, useBuyers, useMatchingProperties, Buyer } from "../../hooks/useBuyers";
+import { Property } from "../../hooks/useProperties";
 import { formatPrice } from "../../hooks/useDashboard";
+import { toast } from "sonner";
 
 export default function ViewBuyer() {
   const navigate = useNavigate();
@@ -13,6 +15,17 @@ export default function ViewBuyer() {
   const buyerId = Number(id);
   const { data: buyer, loading, error } = useBuyer(buyerId);
   const { data: matchingProperties } = useMatchingProperties(buyerId);
+  const { remove } = useBuyers();
+
+  const handleDelete = async () => {
+    try {
+      await remove(buyerId);
+      toast.success("Buyer deleted successfully!");
+      navigate("/buyers");
+    } catch (err) {
+      toast.error("Failed to delete buyer");
+    }
+  };
 
   if (loading) {
     return (
@@ -88,14 +101,32 @@ export default function ViewBuyer() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="gap-2">
-              <Phone className="w-4 h-4" />
-              Call
+            <Button variant="outline" className="gap-2" onClick={() => navigate(`/buyers/${buyerId}/edit`)}>
+              <Edit className="w-4 h-4" />
+              Edit
             </Button>
-            <Button className="gap-2 bg-gradient-to-r from-[#00AEEF] to-[#0096d1]">
-              <Mail className="w-4 h-4" />
-              Email
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="gap-2 text-red-500 hover:text-red-600 hover:bg-red-50">
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Buyer</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete {buyer.name}? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-red-500 hover:bg-red-600">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </div>

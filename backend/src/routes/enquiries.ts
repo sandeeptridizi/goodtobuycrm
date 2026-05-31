@@ -49,7 +49,7 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 // Update enquiry
-router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const fields = req.body;
@@ -73,7 +73,7 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
 });
 
 // Delete enquiry
-router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const result = await query('DELETE FROM enquiries WHERE id = $1 RETURNING id', [id]);

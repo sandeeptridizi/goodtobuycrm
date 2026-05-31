@@ -1,12 +1,14 @@
 import { useNavigate, useParams } from "react-router";
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Home, Car, Droplet, Shield, Video, ExternalLink, ChevronLeft, ChevronRight, Mail, Phone, Sparkles } from "lucide-react";
+import { ArrowLeft, MapPin, Bed, Bath, Square, Calendar, Home, Car, Droplet, Shield, Video, ExternalLink, ChevronLeft, ChevronRight, Mail, Phone, Sparkles, Pencil, Trash2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
-import { useProperty, Property, useMatchingBuyers } from "../../hooks/useProperties";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog";
+import { useProperty, Property, useMatchingBuyers, useProperties } from "../../hooks/useProperties";
 import { Buyer } from "../../hooks/useBuyers";
 import { formatPrice } from "../../hooks/useDashboard";
+import { toast } from "sonner";
 
 export default function ViewProperty() {
   const navigate = useNavigate();
@@ -14,17 +16,14 @@ export default function ViewProperty() {
   const propertyId = Number(id);
   const { data: property, loading: propertyLoading, error: propertyError } = useProperty(propertyId);
   const { data: matchingBuyers, loading: buyersLoading } = useMatchingBuyers(propertyId);
+  const { remove } = useProperties();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
 
+  // Reset index when property changes
   useEffect(() => {
-    if (!property || !property.images || property.images.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % property.images!.length);
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [property]);
+    setCurrentImageIndex(0);
+  }, [propertyId]);
 
   const handlePrevious = () => {
     if (!property?.images) return;
@@ -34,6 +33,20 @@ export default function ViewProperty() {
   const handleNext = () => {
     if (!property?.images) return;
     setCurrentImageIndex((prev) => (prev + 1) % property.images!.length);
+  };
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await remove(propertyId);
+      toast.success("Property deleted successfully!");
+      navigate("/properties");
+    } catch (error) {
+      console.error("Failed to delete property:", error);
+      toast.error("Failed to delete property. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (propertyLoading) {
@@ -67,7 +80,6 @@ export default function ViewProperty() {
 
   const images = property.images && property.images.length > 0 ? property.images : defaultImages;
   const mainImage = images[currentImageIndex];
-  const thumbnailImages = images.slice(1, 5);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -98,10 +110,40 @@ export default function ViewProperty() {
   return (
     <div className="p-8">
       <div className="mb-6">
-        <Button variant="ghost" onClick={() => navigate("/properties")} className="gap-2 mb-4">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Properties
-        </Button>
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={() => navigate("/properties")} className="gap-2 mb-4">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Properties
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate(`/properties/${propertyId}/edit`)}>
+              <Pencil className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-100 hover:text-red-700 hover:border-red-300">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Property</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{property.title}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-red-600 hover:bg-red-700">
+                    {isDeleting ? "Deleting..." : "Delete Property"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">{property.title}</h1>
@@ -125,15 +167,15 @@ export default function ViewProperty() {
       <Card className="mb-6">
         <CardContent className="p-0">
           <div className="p-2 space-y-2">
-            <div className="relative">
+            <div className="relative group">
               <img src={mainImage} alt={property.title} className="w-full object-cover rounded-lg h-96" />
               {images.length > 1 && (
                 <>
-                  <div className="absolute inset-0 flex items-center justify-between p-4">
-                    <Button variant="ghost" onClick={handlePrevious} className="p-2 bg-white/80 hover:bg-white">
+                  <div className="absolute inset-0 flex items-center justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="icon" onClick={handlePrevious} className="p-2 bg-black/40 hover:bg-black/60 text-white rounded-full h-10 w-10">
                       <ChevronLeft className="w-5 h-5" />
                     </Button>
-                    <Button variant="ghost" onClick={handleNext} className="p-2 bg-white/80 hover:bg-white">
+                    <Button variant="ghost" size="icon" onClick={handleNext} className="p-2 bg-black/40 hover:bg-black/60 text-white rounded-full h-10 w-10">
                       <ChevronRight className="w-5 h-5" />
                     </Button>
                   </div>
@@ -148,13 +190,34 @@ export default function ViewProperty() {
                 </>
               )}
             </div>
-            {thumbnailImages.length > 0 && (
-              <div className="grid grid-cols-4 gap-2">
-                {thumbnailImages.map((image, index) => (
-                  <div key={index} className="h-32">
-                    <img src={image} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover rounded-lg" />
-                  </div>
-                ))}
+            {/* Thumbnail section - show all images in a scrollable row */}
+            {images.length > 1 && (
+              <div className="mt-2">
+                <p className="text-sm text-gray-500 mb-2">{images.length} images</p>
+                <div className="flex gap-2 overflow-x-auto pb-2" style={{ scrollbarWidth: 'thin' }}>
+                  {images.map((image, index) => (
+                    <div
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`relative flex-none cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
+                        index === currentImageIndex
+                          ? 'border-[#00AEEF] ring-2 ring-[#00AEEF]/30'
+                          : 'border-transparent hover:border-gray-300'
+                      }`}
+                    >
+                      <img
+                        src={image}
+                        alt={`Property ${index + 1}`}
+                        className="h-20 w-28 object-cover"
+                      />
+                      {index === currentImageIndex && (
+                        <div className="absolute bottom-1 left-1/2 -translate-x-1/2 bg-[#00AEEF] text-white text-xs px-1.5 py-0.5 rounded-full">
+                          {index + 1}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

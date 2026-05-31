@@ -5,12 +5,17 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Properties from "./pages/Properties";
 import CreateProperty from "./pages/CreateProperty";
+import EditProperty from "./pages/EditProperty";
 import ViewProperty from "./pages/ViewProperty";
 import Buyers from "./pages/Buyers";
+import CreateBuyer from "./pages/CreateBuyer";
+import EditBuyer from "./pages/EditBuyer";
 import ViewBuyer from "./pages/ViewBuyer";
 import Sellers from "./pages/Sellers";
 import ViewSeller from "./pages/ViewSeller";
 import Enquiries from "./pages/Enquiries";
+import ViewEnquiry from "./pages/ViewEnquiry";
+import EditEnquiry from "./pages/EditEnquiry";
 import Employees from "./pages/Employees";
 import ViewEmployee from "./pages/ViewEmployee";
 
@@ -48,12 +53,17 @@ export const router = createBrowserRouter([
           { index: true, Component: Dashboard },
           { path: "properties", Component: Properties },
           { path: "properties/create", Component: CreateProperty },
+          { path: "properties/:id/edit", Component: EditProperty },
           { path: "properties/:id", Component: ViewProperty },
           { path: "buyers", Component: Buyers },
+          { path: "buyers/create", Component: CreateBuyer },
+          { path: "buyers/:id/edit", Component: EditBuyer },
           { path: "buyers/:id", Component: ViewBuyer },
           { path: "sellers", Component: Sellers },
           { path: "sellers/:id", Component: ViewSeller },
           { path: "enquiries", Component: Enquiries },
+          { path: "enquiries/:id", Component: ViewEnquiry },
+          { path: "enquiries/:id/edit", Component: EditEnquiry },
           { path: "employees", Component: Employees },
           { path: "employees/:id", Component: ViewEmployee },
         ],

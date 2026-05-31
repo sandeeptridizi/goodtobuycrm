@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Search, Mail as MailIcon, Phone, Clock, Building2, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router";
+import { Search, Mail as MailIcon, Phone, Clock, Building2, Sparkles, Edit, Trash2, Eye } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog";
 import { useEnquiries, Enquiry } from "../../hooks/useEnquiries";
+import { toast } from "sonner";
 
 function timeAgo(dateString: string): string {
   const date = new Date(dateString);
@@ -22,7 +24,8 @@ function timeAgo(dateString: string): string {
 }
 
 export default function Enquiries() {
-  const { data: enquiries, loading, error } = useEnquiries();
+  const navigate = useNavigate();
+  const { data: enquiries, loading, error, remove } = useEnquiries();
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
@@ -51,9 +54,15 @@ export default function Enquiries() {
     let filtered = enquiries;
 
     if (activeTab !== "all") {
-      filtered = filtered.filter(
-        (enq: Enquiry) => enq.status.toLowerCase() === activeTab.toLowerCase()
-      );
+      if (activeTab === "closed") {
+        filtered = filtered.filter(
+          (enq: Enquiry) => enq.status === "Closed Won" || enq.status === "Closed Lost"
+        );
+      } else {
+        filtered = filtered.filter(
+          (enq: Enquiry) => enq.status.toLowerCase() === activeTab.toLowerCase()
+        );
+      }
     }
 
     filtered = filtered.filter(
@@ -64,6 +73,15 @@ export default function Enquiries() {
     );
 
     return filtered;
+  };
+
+  const handleDelete = async (id: number, name: string) => {
+    try {
+      await remove(id);
+      toast.success(`Enquiry from ${name} deleted successfully!`);
+    } catch (err) {
+      toast.error("Failed to delete enquiry");
+    }
   };
 
   const filteredEnquiries = getFilteredEnquiries();
@@ -85,7 +103,7 @@ export default function Enquiries() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#00AEEF] w-5 h-5" />
           <Input
-            placeholder="Search enquiries with AI..."
+            placeholder="Search enquiries..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-11 border-[#00AEEF]/20 focus:border-[#00AEEF] focus:ring-[#00AEEF]/20 bg-white/80 backdrop-blur-sm"
@@ -168,21 +186,53 @@ export default function Enquiries() {
                           )}
 
                           <div className="flex gap-2">
-                            {enquiry.status === "New" && (
-                              <>
-                                <Button size="sm" className="bg-gradient-to-r from-[#00AEEF] to-[#0096d1]">Contact</Button>
-                                <Button size="sm" variant="outline">Schedule Viewing</Button>
-                              </>
-                            )}
-                            {enquiry.status === "Contacted" && (
-                              <>
-                                <Button size="sm" className="bg-gradient-to-r from-[#00AEEF] to-[#0096d1]">Schedule Viewing</Button>
-                                <Button size="sm" variant="outline">Send Follow-up</Button>
-                              </>
-                            )}
-                            {enquiry.status === "Scheduled" && (
-                              <Button size="sm" className="bg-gradient-to-r from-green-400 to-green-500">View Appointment</Button>
-                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1"
+                              onClick={() => navigate(`/enquiries/${enquiry.id}`)}
+                            >
+                              <Eye className="w-4 h-4" />
+                              View
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1"
+                              onClick={() => navigate(`/enquiries/${enquiry.id}/edit`)}
+                            >
+                              <Edit className="w-4 h-4" />
+                              Edit
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="gap-1 text-red-500 hover:text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                  Delete
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Enquiry</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this enquiry from {enquiry.name}? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDelete(enquiry.id, enquiry.name)}
+                                    className="bg-red-500 hover:bg-red-600"
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </div>
                       </div>

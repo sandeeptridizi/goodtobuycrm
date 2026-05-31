@@ -44,7 +44,10 @@ export default function Buyers() {
           </div>
           <p className="text-slate-600">Manage your buyer database with intelligent insights</p>
         </div>
-        <Button className="gap-2 bg-gradient-to-r from-[#00AEEF] to-[#0096d1] hover:from-[#0096d1] hover:to-[#00AEEF] shadow-lg shadow-[#00AEEF]/30 transition-all">
+        <Button
+          className="gap-2 bg-gradient-to-r from-[#00AEEF] to-[#0096d1] hover:from-[#0096d1] hover:to-[#00AEEF] shadow-lg shadow-[#00AEEF]/30 transition-all"
+          onClick={() => navigate("/buyers/create")}
+        >
           <Plus className="w-4 h-4" />
           Add Buyer
         </Button>

@@ -31,7 +31,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 // Create property
-router.post('/', authMiddleware, async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const {
       title, description, address, city, country, zip_code,
