@@ -1,16 +1,32 @@
 import { useNavigate, useParams } from "react-router";
-import { ArrowLeft, Mail, Phone, MapPin, Home, Building, IndianRupee, Calendar, TrendingUp, User, Sparkles } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, Home, Building, IndianRupee, Calendar, TrendingUp, Sparkles, Pencil, Trash2 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
-import { useSeller, Seller } from "../../hooks/useSellers";
+import { useSeller, useSellers, Seller } from "../../hooks/useSellers";
 import { formatPrice } from "../../hooks/useDashboard";
+import { toast } from "sonner";
 
 export default function ViewSeller() {
   const navigate = useNavigate();
   const { id } = useParams();
   const sellerId = Number(id);
   const { data: seller, loading, error } = useSeller(sellerId);
+  const { remove } = useSellers();
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete this seller? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      await remove(sellerId);
+      toast.success("Seller deleted successfully!");
+      navigate("/sellers");
+    } catch (err) {
+      console.error("Failed to delete seller:", err);
+      toast.error("Failed to delete seller. Please try again.");
+    }
+  };
 
   if (loading) {
     return (
@@ -81,9 +97,13 @@ export default function ViewSeller() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="gap-2">
-              <Phone className="w-4 h-4" />
-              Call
+            <Button variant="outline" className="gap-2" onClick={() => navigate(`/sellers/${sellerId}/edit`)}>
+              <Pencil className="w-4 h-4" />
+              Edit
+            </Button>
+            <Button variant="outline" className="gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" onClick={handleDelete}>
+              <Trash2 className="w-4 h-4" />
+              Delete
             </Button>
             <Button className="gap-2 bg-gradient-to-r from-[#00AEEF] to-[#0096d1]">
               <Mail className="w-4 h-4" />

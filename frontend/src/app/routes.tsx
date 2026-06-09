@@ -12,11 +12,15 @@ import CreateBuyer from "./pages/CreateBuyer";
 import EditBuyer from "./pages/EditBuyer";
 import ViewBuyer from "./pages/ViewBuyer";
 import Sellers from "./pages/Sellers";
+import CreateSeller from "./pages/CreateSeller";
+import EditSeller from "./pages/EditSeller";
 import ViewSeller from "./pages/ViewSeller";
 import Enquiries from "./pages/Enquiries";
 import ViewEnquiry from "./pages/ViewEnquiry";
 import EditEnquiry from "./pages/EditEnquiry";
 import Employees from "./pages/Employees";
+import CreateEmployee from "./pages/CreateEmployee";
+import EditEmployee from "./pages/EditEmployee";
 import ViewEmployee from "./pages/ViewEmployee";
 
 function RequireAuth() {
@@ -60,12 +64,16 @@ export const router = createBrowserRouter([
           { path: "buyers/:id/edit", Component: EditBuyer },
           { path: "buyers/:id", Component: ViewBuyer },
           { path: "sellers", Component: Sellers },
+          { path: "sellers/create", Component: CreateSeller },
+          { path: "sellers/:id/edit", Component: EditSeller },
           { path: "sellers/:id", Component: ViewSeller },
           { path: "enquiries", Component: Enquiries },
           { path: "enquiries/:id", Component: ViewEnquiry },
           { path: "enquiries/:id/edit", Component: EditEnquiry },
           { path: "employees", Component: Employees },
+          { path: "employees/create", Component: CreateEmployee },
           { path: "employees/:id", Component: ViewEmployee },
+          { path: "employees/:id/edit", Component: EditEmployee },
         ],
       },
     ],

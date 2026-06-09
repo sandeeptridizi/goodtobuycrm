@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Mail as MailIcon, Phone, MapPin, Sparkles } from "lucide-react";
+import { Plus, Search, Mail as MailIcon, Phone, MapPin, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -41,8 +41,11 @@ export default function Sellers() {
           </div>
           <p className="text-slate-600">Manage your seller clients with intelligent insights</p>
         </div>
-        <Button className="gap-2 bg-gradient-to-r from-[#00AEEF] to-[#0096d1] hover:from-[#0096d1] hover:to-[#00AEEF] shadow-lg shadow-[#00AEEF]/30 transition-all">
-          <span className="text-lg">+</span>
+        <Button
+          className="gap-2 bg-gradient-to-r from-[#00AEEF] to-[#0096d1] hover:from-[#0096d1] hover:to-[#00AEEF] shadow-lg shadow-[#00AEEF]/30 transition-all"
+          onClick={() => navigate("/sellers/create")}
+        >
+          <Plus className="w-4 h-4" />
           Add Seller
         </Button>
       </div>

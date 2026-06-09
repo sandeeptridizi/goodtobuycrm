@@ -42,7 +42,10 @@ export default function Employees() {
           </div>
           <p className="text-slate-600">Manage your team members</p>
         </div>
-        <Button className="gap-2 bg-gradient-to-r from-[#00AEEF] to-[#0096d1] hover:from-[#0096d1] hover:to-[#00AEEF] shadow-lg shadow-[#00AEEF]/30 transition-all">
+        <Button
+          onClick={() => navigate('/employees/create')}
+          className="gap-2 bg-gradient-to-r from-[#00AEEF] to-[#0096d1] hover:from-[#0096d1] hover:to-[#00AEEF] shadow-lg shadow-[#00AEEF]/30 transition-all"
+        >
           <span className="text-lg">+</span>
           Add Employee
         </Button>

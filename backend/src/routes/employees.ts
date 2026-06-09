@@ -39,6 +39,10 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       skills, qualifications, languages
     } = req.body;
 
+    if (typeof name !== 'string' || name.trim() === '') {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
     const result = await query(
       `INSERT INTO employees (
         name, email, phone, role, department, status,
@@ -47,9 +51,12 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *`,
       [
-        name, email, phone, role, department, status || 'Active',
-        join_date, avatar, address, emergency_contact,
-        skills || [], qualifications, languages || []
+        name.trim(), email ?? null, phone ?? null, role ?? null, department ?? null,
+        status || 'Active',
+        join_date ?? null, avatar ?? null, address ?? null, emergency_contact ?? null,
+        Array.isArray(skills) ? skills : [],
+        qualifications ?? null,
+        Array.isArray(languages) ? languages : [],
       ]
     );
     res.status(201).json(result.rows[0]);
@@ -59,18 +66,46 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
+// Fields the client is allowed to update. Anything else is silently dropped
+// to avoid leaking unknown keys into the SQL SET clause.
+const UPDATABLE_EMPLOYEE_FIELDS = [
+  'name',
+  'email',
+  'phone',
+  'role',
+  'department',
+  'status',
+  'join_date',
+  'avatar',
+  'address',
+  'emergency_contact',
+  'skills',
+  'qualifications',
+  'languages',
+] as const;
+
 // Update employee
 router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const fields = req.body;
-    const fieldKeys = Object.keys(fields);
-    const fieldValues = Object.values(fields);
 
-    const setClause = fieldKeys.map((key, i) => `${key} = $${i + 1}`).join(', ');
+    // Whitelist + drop unknown keys. Never trust client-provided column names.
+    const keys = Object.keys(req.body).filter((k) =>
+      (UPDATABLE_EMPLOYEE_FIELDS as readonly string[]).includes(k)
+    );
+
+    if (keys.length === 0) {
+      return res.status(400).json({ error: 'No updatable fields provided' });
+    }
+
+    const values = keys.map((k) => req.body[k]);
+    const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
+
     const result = await query(
-      `UPDATE employees SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${fieldKeys.length + 1} RETURNING *`,
-      [...fieldValues, id]
+      `UPDATE employees SET ${setClause}, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $${keys.length + 1}
+       RETURNING *`,
+      [...values, id]
     );
 
     if (result.rows.length === 0) {

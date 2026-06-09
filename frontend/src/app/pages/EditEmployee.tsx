@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 import { ArrowLeft, Plus, X } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -7,7 +7,7 @@ import { Label } from "../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { useEmployees, type Employee } from "../../hooks/useEmployees";
+import { useEmployee, useEmployees } from "../../hooks/useEmployees";
 import { toast } from "sonner";
 
 const departmentOptions = [
@@ -36,9 +36,13 @@ const languageOptions = [
   "Other"
 ];
 
-export default function CreateEmployee() {
+export default function EditEmployee() {
   const navigate = useNavigate();
-  const { create } = useEmployees();
+  const { id } = useParams();
+  const employeeId = Number(id);
+
+  const { data: employee, loading: loadingEmployee, error: loadError } = useEmployee(employeeId);
+  const { update } = useEmployees();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -52,11 +56,33 @@ export default function CreateEmployee() {
     emergency_contact: "",
     qualifications: "",
   });
-
   const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
   const [languages, setLanguages] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [seeded, setSeeded] = useState(false);
+
+  // Seed form once the employee is loaded. Guarded by `seeded` so user edits
+  // are not clobbered if the hook re-runs (e.g., window focus refetch).
+  useEffect(() => {
+    if (employee && !seeded) {
+      setFormData({
+        name: employee.name ?? "",
+        email: employee.email ?? "",
+        phone: employee.phone ?? "",
+        role: employee.role ?? "",
+        department: employee.department ?? "",
+        status: employee.status ?? "Active",
+        join_date: employee.join_date ? String(employee.join_date).slice(0, 10) : "",
+        address: employee.address ?? "",
+        emergency_contact: employee.emergency_contact ?? "",
+        qualifications: employee.qualifications ?? "",
+      });
+      setSkills(Array.isArray(employee.skills) ? employee.skills : []);
+      setLanguages(Array.isArray(employee.languages) ? employee.languages : []);
+      setSeeded(true);
+    }
+  }, [employee, seeded]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -93,46 +119,64 @@ export default function CreateEmployee() {
       toast.error("Please enter employee name");
       return;
     }
-
     if (!formData.phone.trim()) {
       toast.error("Please enter phone number");
       return;
     }
 
     setIsSubmitting(true);
-
     try {
-      const employeeData = {
+      const payload = {
         ...formData,
         skills,
         languages,
-        avatar: "",
       };
-
-      await create(employeeData as Omit<Employee, "id" | "created_at" | "updated_at">);
-      toast.success("Employee created successfully!");
-      navigate("/employees");
-    } catch (error) {
-      console.error("Failed to create employee:", error);
-      toast.error("Failed to create employee. Please try again.");
+      await update(employeeId, payload);
+      toast.success("Employee updated successfully!");
+      navigate(`/employees/${employeeId}`);
+    } catch (err) {
+      console.error("Failed to update employee:", err);
+      toast.error("Failed to update employee. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (loadingEmployee && !seeded) {
+    return (
+      <div className="p-8 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#00AEEF] border-t-transparent mx-auto mb-4"></div>
+          <p className="text-slate-500">Loading employee...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError || !employee) {
+    return (
+      <div className="p-8 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Employee Not Found</h1>
+          <Button onClick={() => navigate("/employees")}>Back to Employees</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col">
       <div className="px-8 pt-6 pb-4 flex-shrink-0">
         <Button
           variant="ghost"
-          onClick={() => navigate("/employees")}
+          onClick={() => navigate(`/employees/${employeeId}`)}
           className="gap-2 mb-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Employees
+          Back to Employee
         </Button>
-        <h1 className="text-3xl font-bold text-gray-900">Add New Employee</h1>
-        <p className="text-gray-500 mt-1">Fill in the details to add a new team member</p>
+        <h1 className="text-3xl font-bold text-gray-900">Edit Employee</h1>
+        <p className="text-gray-500 mt-1">Update details for {employee.name}</p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-8 pb-6">
@@ -355,13 +399,13 @@ export default function CreateEmployee() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/employees")}
+                onClick={() => navigate(`/employees/${employeeId}`)}
                 disabled={isSubmitting}
               >
                 Cancel
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create Employee"}
+                {isSubmitting ? "Saving..." : "Save Changes"}
               </Button>
             </div>
           </div>

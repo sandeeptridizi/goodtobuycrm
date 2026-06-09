@@ -35,6 +35,10 @@ export const auth = {
     const response = await apiClient.post('/auth/login', { email, password });
     return response.data;
   },
+  verify: async () => {
+    const response = await apiClient.post('/auth/verify');
+    return response.data;
+  },
 };
 
 // Dashboard

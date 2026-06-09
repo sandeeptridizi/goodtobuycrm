@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { auth as authApi } from "../../lib/api";
 
 interface User {
   id: number;
@@ -28,11 +29,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedToken = localStorage.getItem("auth_token");
     const storedUser = localStorage.getItem("auth_user");
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+    if (!storedToken || !storedUser) {
+      setIsLoading(false);
+      return;
     }
-    setIsLoading(false);
+
+    // Optimistically restore the session from storage...
+    setToken(storedToken);
+    setUser(JSON.parse(storedUser));
+
+    // ...then confirm the token is still valid with the backend. An expired or
+    // stale token (e.g. after a JWT_SECRET change) returns 401, which the axios
+    // interceptor handles by clearing storage and redirecting to /login — so the
+    // user is sent to login at startup instead of being kicked out mid-action.
+    authApi
+      .verify()
+      .then((data) => {
+        if (data?.user) {
+          localStorage.setItem("auth_user", JSON.stringify(data.user));
+          setUser(data.user);
+        }
+      })
+      .catch(() => {
+        // Network/other transient errors: keep the optimistic session as-is.
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const login = useCallback((newToken: string, newUser: User) => {
