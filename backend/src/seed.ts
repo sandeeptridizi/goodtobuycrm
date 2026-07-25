@@ -1,25 +1,44 @@
 import dotenv from 'dotenv';
-import { query, initDatabase } from './db/index.js';
+import bcrypt from 'bcrypt';
+import { getAll, getWhere, createDoc } from './db/index.js';
 
 dotenv.config();
 
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'contact@goodtobuy.in';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'goodtobuy@123';
+
+async function ensureAdminUser(): Promise<string> {
+  const existing = await getWhere('users', 'email', '==', ADMIN_EMAIL);
+  if (existing.length > 0) {
+    console.log(`Admin user ${ADMIN_EMAIL} already exists`);
+    return existing[0].id;
+  }
+
+  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+  const user = await createDoc('users', {
+    email: ADMIN_EMAIL,
+    password_hash: passwordHash,
+    name: 'GoodToBuy Admin',
+  });
+  console.log(`Created admin user ${ADMIN_EMAIL} (password from ADMIN_PASSWORD in .env)`);
+  return user.id;
+}
+
 async function seed() {
   try {
-    console.log('Initializing database...');
-    await initDatabase();
+    console.log('Connecting to Firestore...');
+
+    // Always make sure the login user exists
+    const userId = await ensureAdminUser();
 
     // Check if data already exists
-    const existingProperties = await query('SELECT COUNT(*) as count FROM properties');
-    if (parseInt(existingProperties.rows[0].count) > 0) {
-      console.log('Database already has data, skipping seed...');
+    const existingProperties = await getAll('properties');
+    if (existingProperties.length > 0) {
+      console.log('Firestore already has data, skipping seed...');
       process.exit(0);
     }
 
     console.log('Seeding data...');
-
-    // Get user id
-    const userResult = await query("SELECT id FROM users WHERE email = 'contact@goodtobuy.in'");
-    const userId = userResult.rows[0]?.id || 1;
 
     // Seed Properties
     const properties = [
@@ -187,20 +206,10 @@ async function seed() {
       }
     ];
 
+    const propertyIds: string[] = [];
     for (const prop of properties) {
-      await query(
-        `INSERT INTO properties (
-          title, description, address, city, price, type, status,
-          bedrooms, bathrooms, area, land_area, floors, car_parking,
-          facing, amenities, added_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
-        [
-          prop.title, prop.description, prop.address, prop.city, prop.price,
-          prop.type, prop.status, prop.bedrooms, prop.bathrooms, prop.area,
-          prop.land_area, prop.floors, prop.car_parking, prop.facing,
-          prop.amenities, userId
-        ]
-      );
+      const created = await createDoc('properties', { ...prop, added_by: userId });
+      propertyIds.push(created.id);
     }
     console.log(`Seeded ${properties.length} properties`);
 
@@ -345,23 +354,11 @@ async function seed() {
     ];
 
     for (const buyer of buyers) {
-      await query(
-        `INSERT INTO buyers (
-          name, email, phone, budget_min, budget_max, property_types,
-          min_bedrooms, max_bedrooms, min_bathrooms, min_area,
-          preferred_locations, status, lead_source, timeline, financing
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
-        [
-          buyer.name, buyer.email, buyer.phone, buyer.budget_min, buyer.budget_max,
-          buyer.property_types, buyer.min_bedrooms, buyer.max_bedrooms,
-          buyer.min_bathrooms, buyer.min_area, buyer.preferred_locations,
-          buyer.status, buyer.lead_source, buyer.timeline, buyer.financing
-        ]
-      );
+      await createDoc('buyers', buyer);
     }
     console.log(`Seeded ${buyers.length} buyers`);
 
-    // Seed Sellers
+    // Seed Sellers (property_ids links sellers to the properties they are selling)
     const sellers = [
       {
         name: 'Mohan Enterprises Pvt Ltd',
@@ -370,7 +367,8 @@ async function seed() {
         address: 'Nariman Point, Mumbai',
         status: 'Active',
         selling_reason: 'Relocating overseas',
-        timeline: '3 months'
+        timeline: '3 months',
+        property_ids: [propertyIds[0]]
       },
       {
         name: 'Sharma Family Trust',
@@ -379,7 +377,8 @@ async function seed() {
         address: 'Andheri West, Mumbai',
         status: 'Active',
         selling_reason: 'Property consolidation',
-        timeline: '6 months'
+        timeline: '6 months',
+        property_ids: [propertyIds[2]]
       },
       {
         name: 'Global Realty Corp',
@@ -388,7 +387,8 @@ async function seed() {
         address: 'MG Road, Bangalore',
         status: 'Active',
         selling_reason: 'Portfolio restructuring',
-        timeline: 'Immediate'
+        timeline: 'Immediate',
+        property_ids: [propertyIds[1]]
       },
       {
         name: 'Ahuja Properties',
@@ -397,7 +397,8 @@ async function seed() {
         address: 'Koregaon Park, Pune',
         status: 'Active',
         selling_reason: 'Downsizing',
-        timeline: '4 months'
+        timeline: '4 months',
+        property_ids: [propertyIds[5]]
       },
       {
         name: 'Kapoor Estate',
@@ -406,21 +407,15 @@ async function seed() {
         address: 'Vasant Kunj, Delhi',
         status: 'Inactive',
         selling_reason: 'NRI settlement',
-        timeline: '12 months'
+        timeline: '12 months',
+        property_ids: []
       }
     ];
 
     for (const seller of sellers) {
-      await query(
-        `INSERT INTO sellers (name, email, phone, address, status, selling_reason, timeline, preferred_agent)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [seller.name, seller.email, seller.phone, seller.address, seller.status, seller.selling_reason, seller.timeline, userId]
-      );
+      await createDoc('sellers', { ...seller, preferred_agent: userId });
     }
     console.log(`Seeded ${sellers.length} sellers`);
-
-    // Link sellers to properties
-    await query(`INSERT INTO seller_properties (seller_id, property_id) VALUES (1, 1), (2, 3), (3, 2), (4, 6)`);
 
     // Seed Enquiries
     const enquiries = [
@@ -435,11 +430,7 @@ async function seed() {
     ];
 
     for (const enquiry of enquiries) {
-      await query(
-        `INSERT INTO enquiries (name, email, phone, property, message, status, source)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [enquiry.name, enquiry.email, enquiry.phone, enquiry.property, enquiry.message, enquiry.status, enquiry.source]
-      );
+      await createDoc('enquiries', enquiry);
     }
     console.log(`Seeded ${enquiries.length} enquiries`);
 
@@ -453,22 +444,20 @@ async function seed() {
     ];
 
     for (const emp of employees) {
-      await query(
-        `INSERT INTO employees (name, email, phone, role, department, status, skills, languages)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [emp.name, emp.email, emp.phone, emp.role, emp.department, 'Active', emp.skills, emp.languages]
-      );
+      await createDoc('employees', { ...emp, status: 'Active' });
     }
     console.log(`Seeded ${employees.length} employees`);
 
-    console.log('\n✅ Database seeded successfully!');
+    console.log('\n✅ Firestore seeded successfully!');
     console.log('Summary:');
     console.log(`  - Properties: ${properties.length}`);
     console.log(`  - Buyers: ${buyers.length}`);
     console.log(`  - Sellers: ${sellers.length}`);
     console.log(`  - Enquiries: ${enquiries.length}`);
     console.log(`  - Employees: ${employees.length}`);
+    console.log(`\nLogin with: ${ADMIN_EMAIL} / <ADMIN_PASSWORD from .env>`);
 
+    process.exit(0);
   } catch (error) {
     console.error('Seed error:', error);
     process.exit(1);

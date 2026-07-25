@@ -10,7 +10,7 @@ import { toast } from "sonner";
 export default function ViewEmployee() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const employeeId = Number(id);
+  const employeeId = String(id);
   const { data: employee, loading, error } = useEmployee(employeeId);
   const { remove } = useEmployees();
 

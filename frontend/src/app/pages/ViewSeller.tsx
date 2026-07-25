@@ -10,7 +10,7 @@ import { toast } from "sonner";
 export default function ViewSeller() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const sellerId = Number(id);
+  const sellerId = String(id);
   const { data: seller, loading, error } = useSeller(sellerId);
   const { remove } = useSellers();
 

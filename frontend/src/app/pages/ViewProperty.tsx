@@ -13,7 +13,7 @@ import { toast } from "sonner";
 export default function ViewProperty() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const propertyId = Number(id);
+  const propertyId = String(id);
   const { data: property, loading: propertyLoading, error: propertyError } = useProperty(propertyId);
   const { data: matchingBuyers, loading: buyersLoading } = useMatchingBuyers(propertyId);
   const { remove } = useProperties();

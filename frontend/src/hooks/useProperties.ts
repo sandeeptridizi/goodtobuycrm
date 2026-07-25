@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { properties as api } from '../lib/api';
 
 export interface Property {
-  id: number;
+  id: string;
   title: string;
   description: string;
   address: string;
@@ -65,13 +65,13 @@ export function useProperties() {
     return result;
   };
 
-  const update = async (id: number, data: Partial<Property>) => {
+  const update = async (id: string | number, data: Partial<Property>) => {
     const result = await api.update(id, data);
     setData((prev) => prev.map((p) => (p.id === id ? result : p)));
     return result;
   };
 
-  const remove = async (id: number) => {
+  const remove = async (id: string | number) => {
     await api.delete(id);
     setData((prev) => prev.filter((p) => p.id !== id));
   };
@@ -79,7 +79,7 @@ export function useProperties() {
   return { data, loading, error, refetch: fetchProperties, create, update, remove };
 }
 
-export function useProperty(id: number) {
+export function useProperty(id: string | number) {
   const [data, setData] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +105,7 @@ export function useProperty(id: number) {
   return { data, loading, error, refetch: fetchProperty };
 }
 
-export function useMatchingBuyers(propertyId: number) {
+export function useMatchingBuyers(propertyId: string | number) {
   const [data, setData] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -130,7 +130,7 @@ export function useMatchingBuyers(propertyId: number) {
   return { data, loading, error };
 }
 
-export function useMatchingProperties(buyerId: number) {
+export function useMatchingProperties(buyerId: string | number) {
   const [data, setData] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -8,7 +8,7 @@ import sellersRoutes from './routes/sellers.js';
 import enquiriesRoutes from './routes/enquiries.js';
 import employeesRoutes from './routes/employees.js';
 import dashboardRoutes from './routes/dashboard.js';
-import { initDatabase } from './db/index.js';
+import './db/index.js';
 
 dotenv.config();
 
@@ -31,16 +31,8 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-async function start() {
-  try {
-    await initDatabase();
-    app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-}
-
-start();
+// Firestore is schemaless — no table setup needed, collections are created on first write
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Data store: Cloud Firestore (project: ${process.env.FIREBASE_PROJECT_ID})`);
+});

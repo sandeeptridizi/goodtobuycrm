@@ -24,7 +24,7 @@ function timeAgo(dateString: string): string {
 export default function ViewEnquiry() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const enquiryId = Number(id);
+  const enquiryId = String(id);
   const { data: enquiry, loading, error } = useEnquiry(enquiryId);
   const { remove, update } = useEnquiries();
 

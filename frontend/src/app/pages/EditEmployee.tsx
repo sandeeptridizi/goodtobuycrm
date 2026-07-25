@@ -39,7 +39,7 @@ const languageOptions = [
 export default function EditEmployee() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const employeeId = Number(id);
+  const employeeId = String(id);
 
   const { data: employee, loading: loadingEmployee, error: loadError } = useEmployee(employeeId);
   const { update } = useEmployees();

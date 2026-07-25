@@ -43,7 +43,7 @@ const amenitiesOptions = [
 export default function EditBuyer() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const buyerId = Number(id);
+  const buyerId = String(id);
   const { data: buyer, loading } = useBuyer(buyerId);
   const { update } = useBuyers();
 

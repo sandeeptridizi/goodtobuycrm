@@ -56,7 +56,7 @@ const amenitiesOptions = {
 export default function EditProperty() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const propertyId = Number(id);
+  const propertyId = String(id);
   const { data: property, loading: propertyLoading, error: propertyError } = useProperty(propertyId);
   const { update } = useProperties();
 

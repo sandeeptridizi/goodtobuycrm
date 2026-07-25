@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { enquiries as api } from '../lib/api';
 
 export interface Enquiry {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone: string;
@@ -43,13 +43,13 @@ export function useEnquiries() {
     return result;
   };
 
-  const update = async (id: number, data: Partial<Enquiry>) => {
+  const update = async (id: string | number, data: Partial<Enquiry>) => {
     const result = await api.update(id, data);
     setData((prev) => prev.map((e) => (e.id === id ? result : e)));
     return result;
   };
 
-  const remove = async (id: number) => {
+  const remove = async (id: string | number) => {
     await api.delete(id);
     setData((prev) => prev.filter((e) => e.id !== id));
   };
@@ -57,7 +57,7 @@ export function useEnquiries() {
   return { data, loading, error, refetch: fetchEnquiries, create, update, remove };
 }
 
-export function useEnquiry(id: number) {
+export function useEnquiry(id: string | number) {
   const [data, setData] = useState<Enquiry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

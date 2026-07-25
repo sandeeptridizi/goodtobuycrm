@@ -3,7 +3,7 @@ import { buyers as api } from '../lib/api';
 import { Property } from './useProperties';
 
 export interface Buyer {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone: string;
@@ -58,13 +58,13 @@ export function useBuyers() {
     return result;
   };
 
-  const update = async (id: number, data: Partial<Buyer>) => {
+  const update = async (id: string | number, data: Partial<Buyer>) => {
     const result = await api.update(id, data);
     setData((prev) => prev.map((b) => (b.id === id ? result : b)));
     return result;
   };
 
-  const remove = async (id: number) => {
+  const remove = async (id: string | number) => {
     await api.delete(id);
     setData((prev) => prev.filter((b) => b.id !== id));
   };
@@ -72,7 +72,7 @@ export function useBuyers() {
   return { data, loading, error, refetch: fetchBuyers, create, update, remove };
 }
 
-export function useBuyer(id: number) {
+export function useBuyer(id: string | number) {
   const [data, setData] = useState<Buyer | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +98,7 @@ export function useBuyer(id: number) {
   return { data, loading, error, refetch: fetchBuyer };
 }
 
-export function useMatchingProperties(buyerId: number) {
+export function useMatchingProperties(buyerId: string | number) {
   const [data, setData] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { employees as api } from '../lib/api';
 
 export interface Employee {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone: string;
@@ -49,13 +49,13 @@ export function useEmployees() {
     return result;
   };
 
-  const update = async (id: number, data: Partial<Employee>) => {
+  const update = async (id: string | number, data: Partial<Employee>) => {
     const result = await api.update(id, data);
     setData((prev) => prev.map((e) => (e.id === id ? result : e)));
     return result;
   };
 
-  const remove = async (id: number) => {
+  const remove = async (id: string | number) => {
     await api.delete(id);
     setData((prev) => prev.filter((e) => e.id !== id));
   };
@@ -63,7 +63,7 @@ export function useEmployees() {
   return { data, loading, error, refetch: fetchEmployees, create, update, remove };
 }
 
-export function useEmployee(id: number) {
+export function useEmployee(id: string | number) {
   const [data, setData] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

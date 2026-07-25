@@ -12,7 +12,7 @@ import { toast } from "sonner";
 export default function ViewBuyer() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const buyerId = Number(id);
+  const buyerId = String(id);
   const { data: buyer, loading, error } = useBuyer(buyerId);
   const { data: matchingProperties } = useMatchingProperties(buyerId);
   const { remove } = useBuyers();

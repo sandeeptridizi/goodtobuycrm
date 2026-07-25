@@ -3,7 +3,7 @@ import { sellers as api } from '../lib/api';
 import { Property } from './useProperties';
 
 export interface Seller {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone: string;
@@ -48,13 +48,13 @@ export function useSellers() {
     return result;
   };
 
-  const update = async (id: number, data: Partial<Seller>) => {
+  const update = async (id: string | number, data: Partial<Seller>) => {
     const result = await api.update(id, data);
     setData((prev) => prev.map((s) => (s.id === id ? result : s)));
     return result;
   };
 
-  const remove = async (id: number) => {
+  const remove = async (id: string | number) => {
     await api.delete(id);
     setData((prev) => prev.filter((s) => s.id !== id));
   };
@@ -62,7 +62,7 @@ export function useSellers() {
   return { data, loading, error, refetch: fetchSellers, create, update, remove };
 }
 
-export function useSeller(id: number) {
+export function useSeller(id: string | number) {
   const [data, setData] = useState<Seller | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

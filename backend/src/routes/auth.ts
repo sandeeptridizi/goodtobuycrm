@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { query } from '../db/index.js';
+import { getById, getWhere } from '../db/index.js';
 
 const router = Router();
 
@@ -13,13 +13,13 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const result = await query('SELECT * FROM users WHERE email = $1', [email]);
+    const users = await getWhere('users', 'email', '==', email);
 
-    if (result.rows.length === 0) {
+    if (users.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const user = result.rows[0];
+    const user = users[0];
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
     if (!isValidPassword) {
@@ -56,17 +56,17 @@ router.post('/verify', async (req: Request, res: Response) => {
 
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as {
-      userId: number;
+      userId: string;
       email: string;
     };
 
-    const result = await query('SELECT id, email, name FROM users WHERE id = $1', [decoded.userId]);
+    const user = await getById('users', decoded.userId);
 
-    if (result.rows.length === 0) {
+    if (!user) {
       return res.status(401).json({ valid: false });
     }
 
-    res.json({ valid: true, user: result.rows[0] });
+    res.json({ valid: true, user: { id: user.id, email: user.email, name: user.name } });
   } catch {
     res.status(401).json({ valid: false });
   }

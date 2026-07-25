@@ -34,7 +34,7 @@ const sourceOptions = [
 export default function EditEnquiry() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const enquiryId = Number(id);
+  const enquiryId = String(id);
   const { data: enquiry, loading } = useEnquiry(enquiryId);
   const { update } = useEnquiries();
 

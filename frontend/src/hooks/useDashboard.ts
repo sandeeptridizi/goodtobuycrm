@@ -10,7 +10,7 @@ export interface DashboardStats {
   totalEnquiries: number;
   newEnquiries: number;
   recentEnquiries: Array<{
-    id: number;
+    id: string;
     name: string;
     email: string;
     phone: string;
@@ -22,7 +22,7 @@ export interface DashboardStats {
     updated_at: string;
   }>;
   recentBuyers: Array<{
-    id: number;
+    id: string;
     name: string;
     email: string;
     phone: string;

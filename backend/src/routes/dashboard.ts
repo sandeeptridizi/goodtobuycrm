@@ -1,46 +1,38 @@
 import { Router, Request, Response } from 'express';
-import { query } from '../db/index.js';
+import { getAll, DocData } from '../db/index.js';
 
 const router = Router();
+
+function statusBreakdown(rows: DocData[]): { status: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const status = row.status || 'Unknown';
+    counts.set(status, (counts.get(status) || 0) + 1);
+  }
+  return Array.from(counts.entries()).map(([status, count]) => ({ status, count }));
+}
 
 // Get dashboard stats
 router.get('/stats', async (_req: Request, res: Response) => {
   try {
-    // Get counts from all tables
-    const propertiesCount = await query('SELECT COUNT(*) as count FROM properties');
-    const activeBuyersCount = await query("SELECT COUNT(*) as count FROM buyers WHERE status = 'Active'");
-    const activeSellersCount = await query("SELECT COUNT(*) as count FROM sellers WHERE status = 'Active'");
-    const enquiriesCount = await query('SELECT COUNT(*) as count FROM enquiries');
-    const newEnquiriesCount = await query("SELECT COUNT(*) as count FROM enquiries WHERE status = 'New'");
-
-    // Get recent enquiries
-    const recentEnquiries = await query(
-      "SELECT * FROM enquiries ORDER BY created_at DESC LIMIT 5"
-    );
-
-    // Get recent buyers
-    const recentBuyers = await query(
-      "SELECT * FROM buyers ORDER BY created_at DESC LIMIT 5"
-    );
-
-    // Get status breakdown
-    const propertyStatus = await query(
-      'SELECT status, COUNT(*) as count FROM properties GROUP BY status'
-    );
-    const buyerStatus = await query(
-      'SELECT status, COUNT(*) as count FROM buyers GROUP BY status'
-    );
+    // All lists come back sorted by created_at desc
+    const [properties, buyers, sellers, enquiries] = await Promise.all([
+      getAll('properties'),
+      getAll('buyers'),
+      getAll('sellers'),
+      getAll('enquiries'),
+    ]);
 
     res.json({
-      totalProperties: parseInt(propertiesCount.rows[0].count),
-      activeBuyers: parseInt(activeBuyersCount.rows[0].count),
-      activeSellers: parseInt(activeSellersCount.rows[0].count),
-      totalEnquiries: parseInt(enquiriesCount.rows[0].count),
-      newEnquiries: parseInt(newEnquiriesCount.rows[0].count),
-      recentEnquiries: recentEnquiries.rows,
-      recentBuyers: recentBuyers.rows,
-      propertyStatus: propertyStatus.rows,
-      buyerStatus: buyerStatus.rows
+      totalProperties: properties.length,
+      activeBuyers: buyers.filter((b) => b.status === 'Active').length,
+      activeSellers: sellers.filter((s) => s.status === 'Active').length,
+      totalEnquiries: enquiries.length,
+      newEnquiries: enquiries.filter((e) => e.status === 'New').length,
+      recentEnquiries: enquiries.slice(0, 5),
+      recentBuyers: buyers.slice(0, 5),
+      propertyStatus: statusBreakdown(properties),
+      buyerStatus: statusBreakdown(buyers),
     });
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);

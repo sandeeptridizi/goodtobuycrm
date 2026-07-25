@@ -13,7 +13,7 @@ import { toast } from "sonner";
 export default function EditSeller() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const sellerId = Number(id);
+  const sellerId = String(id);
   const { data: seller, loading } = useSeller(sellerId);
   const { update } = useSellers();
 

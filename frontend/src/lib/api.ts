@@ -55,7 +55,7 @@ export const properties = {
     const response = await apiClient.get('/properties');
     return response.data;
   },
-  getOne: async (id: number) => {
+  getOne: async (id: string | number) => {
     const response = await apiClient.get(`/properties/${id}`);
     return response.data;
   },
@@ -63,15 +63,15 @@ export const properties = {
     const response = await apiClient.post('/properties', data);
     return response.data;
   },
-  update: async (id: number, data: Record<string, unknown>) => {
+  update: async (id: string | number, data: Record<string, unknown>) => {
     const response = await apiClient.put(`/properties/${id}`, data);
     return response.data;
   },
-  delete: async (id: number) => {
+  delete: async (id: string | number) => {
     const response = await apiClient.delete(`/properties/${id}`);
     return response.data;
   },
-  getMatchingBuyers: async (id: number) => {
+  getMatchingBuyers: async (id: string | number) => {
     const response = await apiClient.get(`/properties/${id}/matching-buyers`);
     return response.data;
   },
@@ -83,7 +83,7 @@ export const buyers = {
     const response = await apiClient.get('/buyers');
     return response.data;
   },
-  getOne: async (id: number) => {
+  getOne: async (id: string | number) => {
     const response = await apiClient.get(`/buyers/${id}`);
     return response.data;
   },
@@ -91,15 +91,15 @@ export const buyers = {
     const response = await apiClient.post('/buyers', data);
     return response.data;
   },
-  update: async (id: number, data: Record<string, unknown>) => {
+  update: async (id: string | number, data: Record<string, unknown>) => {
     const response = await apiClient.put(`/buyers/${id}`, data);
     return response.data;
   },
-  delete: async (id: number) => {
+  delete: async (id: string | number) => {
     const response = await apiClient.delete(`/buyers/${id}`);
     return response.data;
   },
-  getMatchingProperties: async (id: number) => {
+  getMatchingProperties: async (id: string | number) => {
     const response = await apiClient.get(`/buyers/${id}/matching-properties`);
     return response.data;
   },
@@ -111,7 +111,7 @@ export const sellers = {
     const response = await apiClient.get('/sellers');
     return response.data;
   },
-  getOne: async (id: number) => {
+  getOne: async (id: string | number) => {
     const response = await apiClient.get(`/sellers/${id}`);
     return response.data;
   },
@@ -119,11 +119,11 @@ export const sellers = {
     const response = await apiClient.post('/sellers', data);
     return response.data;
   },
-  update: async (id: number, data: Record<string, unknown>) => {
+  update: async (id: string | number, data: Record<string, unknown>) => {
     const response = await apiClient.put(`/sellers/${id}`, data);
     return response.data;
   },
-  delete: async (id: number) => {
+  delete: async (id: string | number) => {
     const response = await apiClient.delete(`/sellers/${id}`);
     return response.data;
   },
@@ -135,7 +135,7 @@ export const enquiries = {
     const response = await apiClient.get('/enquiries');
     return response.data;
   },
-  getOne: async (id: number) => {
+  getOne: async (id: string | number) => {
     const response = await apiClient.get(`/enquiries/${id}`);
     return response.data;
   },
@@ -143,11 +143,11 @@ export const enquiries = {
     const response = await apiClient.post('/enquiries', data);
     return response.data;
   },
-  update: async (id: number, data: Record<string, unknown>) => {
+  update: async (id: string | number, data: Record<string, unknown>) => {
     const response = await apiClient.put(`/enquiries/${id}`, data);
     return response.data;
   },
-  delete: async (id: number) => {
+  delete: async (id: string | number) => {
     const response = await apiClient.delete(`/enquiries/${id}`);
     return response.data;
   },
@@ -159,7 +159,7 @@ export const employees = {
     const response = await apiClient.get('/employees');
     return response.data;
   },
-  getOne: async (id: number) => {
+  getOne: async (id: string | number) => {
     const response = await apiClient.get(`/employees/${id}`);
     return response.data;
   },
@@ -167,11 +167,11 @@ export const employees = {
     const response = await apiClient.post('/employees', data);
     return response.data;
   },
-  update: async (id: number, data: Record<string, unknown>) => {
+  update: async (id: string | number, data: Record<string, unknown>) => {
     const response = await apiClient.put(`/employees/${id}`, data);
     return response.data;
   },
-  delete: async (id: number) => {
+  delete: async (id: string | number) => {
     const response = await apiClient.delete(`/employees/${id}`);
     return response.data;
   },

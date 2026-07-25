@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { query } from '../db/index.js';
+import { getAll, getById, createDoc, updateDocById, deleteDocById } from '../db/index.js';
 import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
@@ -7,8 +7,8 @@ const router = Router();
 // Get all employees
 router.get('/', async (_req: Request, res: Response) => {
   try {
-    const result = await query('SELECT * FROM employees ORDER BY created_at DESC');
-    res.json(result.rows);
+    const employees = await getAll('employees');
+    res.json(employees);
   } catch (error) {
     console.error('Error fetching employees:', error);
     res.status(500).json({ error: 'Failed to fetch employees' });
@@ -18,12 +18,12 @@ router.get('/', async (_req: Request, res: Response) => {
 // Get single employee
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const result = await query('SELECT * FROM employees WHERE id = $1', [id]);
-    if (result.rows.length === 0) {
+    const id = String(req.params.id);
+    const employee = await getById('employees', id);
+    if (!employee) {
       return res.status(404).json({ error: 'Employee not found' });
     }
-    res.json(result.rows[0]);
+    res.json(employee);
   } catch (error) {
     console.error('Error fetching employee:', error);
     res.status(500).json({ error: 'Failed to fetch employee' });
@@ -43,31 +43,29 @@ router.post('/', authMiddleware, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Name is required' });
     }
 
-    const result = await query(
-      `INSERT INTO employees (
-        name, email, phone, role, department, status,
-        join_date, avatar, address, emergency_contact,
-        skills, qualifications, languages
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-      RETURNING *`,
-      [
-        name.trim(), email ?? null, phone ?? null, role ?? null, department ?? null,
-        status || 'Active',
-        join_date ?? null, avatar ?? null, address ?? null, emergency_contact ?? null,
-        Array.isArray(skills) ? skills : [],
-        qualifications ?? null,
-        Array.isArray(languages) ? languages : [],
-      ]
-    );
-    res.status(201).json(result.rows[0]);
+    const employee = await createDoc('employees', {
+      name: name.trim(),
+      email: email ?? null,
+      phone: phone ?? null,
+      role: role ?? null,
+      department: department ?? null,
+      status: status || 'Active',
+      join_date: join_date ?? null,
+      avatar: avatar ?? null,
+      address: address ?? null,
+      emergency_contact: emergency_contact ?? null,
+      skills: Array.isArray(skills) ? skills : [],
+      qualifications: qualifications ?? null,
+      languages: Array.isArray(languages) ? languages : [],
+    });
+    res.status(201).json(employee);
   } catch (error) {
     console.error('Error creating employee:', error);
     res.status(500).json({ error: 'Failed to create employee' });
   }
 });
 
-// Fields the client is allowed to update. Anything else is silently dropped
-// to avoid leaking unknown keys into the SQL SET clause.
+// Fields the client is allowed to update. Anything else is silently dropped.
 const UPDATABLE_EMPLOYEE_FIELDS = [
   'name',
   'email',
@@ -87,31 +85,25 @@ const UPDATABLE_EMPLOYEE_FIELDS = [
 // Update employee
 router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
 
-    // Whitelist + drop unknown keys. Never trust client-provided column names.
-    const keys = Object.keys(req.body).filter((k) =>
-      (UPDATABLE_EMPLOYEE_FIELDS as readonly string[]).includes(k)
-    );
+    // Whitelist + drop unknown keys. Never trust client-provided field names.
+    const fields: Record<string, unknown> = {};
+    for (const key of UPDATABLE_EMPLOYEE_FIELDS) {
+      if (key in req.body) {
+        fields[key] = req.body[key];
+      }
+    }
 
-    if (keys.length === 0) {
+    if (Object.keys(fields).length === 0) {
       return res.status(400).json({ error: 'No updatable fields provided' });
     }
 
-    const values = keys.map((k) => req.body[k]);
-    const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
-
-    const result = await query(
-      `UPDATE employees SET ${setClause}, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $${keys.length + 1}
-       RETURNING *`,
-      [...values, id]
-    );
-
-    if (result.rows.length === 0) {
+    const employee = await updateDocById('employees', id, fields);
+    if (!employee) {
       return res.status(404).json({ error: 'Employee not found' });
     }
-    res.json(result.rows[0]);
+    res.json(employee);
   } catch (error) {
     console.error('Error updating employee:', error);
     res.status(500).json({ error: 'Failed to update employee' });
@@ -121,9 +113,9 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
 // Delete employee
 router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const result = await query('DELETE FROM employees WHERE id = $1 RETURNING id', [id]);
-    if (result.rows.length === 0) {
+    const id = String(req.params.id);
+    const deleted = await deleteDocById('employees', id);
+    if (!deleted) {
       return res.status(404).json({ error: 'Employee not found' });
     }
     res.json({ message: 'Employee deleted', id });

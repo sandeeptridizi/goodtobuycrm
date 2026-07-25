@@ -1,14 +1,20 @@
 import { Router, Request, Response } from 'express';
-import { query } from '../db/index.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { getAll, getById, createDoc, updateDocById, deleteDocById } from '../db/index.js';
+import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
+
+function num(value: unknown, fallback: number | null = null): number | null {
+  if (value === undefined || value === null || value === '') return fallback;
+  const n = Number(value);
+  return Number.isNaN(n) ? fallback : n;
+}
 
 // Get all properties
 router.get('/', async (_req: Request, res: Response) => {
   try {
-    const result = await query('SELECT * FROM properties ORDER BY created_at DESC');
-    res.json(result.rows);
+    const properties = await getAll('properties');
+    res.json(properties);
   } catch (error) {
     console.error('Error fetching properties:', error);
     res.status(500).json({ error: 'Failed to fetch properties' });
@@ -18,12 +24,12 @@ router.get('/', async (_req: Request, res: Response) => {
 // Get single property
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const result = await query('SELECT * FROM properties WHERE id = $1', [id]);
-    if (result.rows.length === 0) {
+    const id = String(req.params.id);
+    const property = await getById('properties', id);
+    if (!property) {
       return res.status(404).json({ error: 'Property not found' });
     }
-    res.json(result.rows[0]);
+    res.json(property);
   } catch (error) {
     console.error('Error fetching property:', error);
     res.status(500).json({ error: 'Failed to fetch property' });
@@ -41,26 +47,37 @@ router.post('/', async (req: Request, res: Response) => {
       rental_income, amenities, images, youtube_url, instagram_url
     } = req.body;
 
-    const result = await query(
-      `INSERT INTO properties (
-        title, description, address, city, country, zip_code,
-        price, type, status, bedrooms, bathrooms, area,
-        land_area, year_built, building_age, floors, car_parking,
-        parking_size, facing, water_source, drain_type, boundary_wall,
-        rental_income, amenities, images, youtube_url, instagram_url,
-        added_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
-      RETURNING *`,
-      [
-        title, description, address, city, country || 'India', zip_code,
-        price, type, status || 'Available', bedrooms || 0, bathrooms || 0, area || 0,
-        land_area, year_built, building_age, floors || 1, car_parking || 0,
-        parking_size, facing, water_source, drain_type, boundary_wall,
-        rental_income, amenities || [], images || [], youtube_url, instagram_url,
-        (req as any).userId
-      ]
-    );
-    res.status(201).json(result.rows[0]);
+    const property = await createDoc('properties', {
+      title,
+      description,
+      address,
+      city,
+      country: country || 'India',
+      zip_code,
+      price: num(price, 0),
+      type,
+      status: status || 'Available',
+      bedrooms: num(bedrooms, 0),
+      bathrooms: num(bathrooms, 0),
+      area: num(area, 0),
+      land_area: num(land_area),
+      year_built: num(year_built),
+      building_age: num(building_age),
+      floors: num(floors, 1),
+      car_parking: num(car_parking, 0),
+      parking_size: num(parking_size),
+      facing,
+      water_source,
+      drain_type,
+      boundary_wall,
+      rental_income: num(rental_income),
+      amenities: Array.isArray(amenities) ? amenities : [],
+      images: Array.isArray(images) ? images : [],
+      youtube_url,
+      instagram_url,
+      added_by: (req as AuthRequest).userId ?? null,
+    });
+    res.status(201).json(property);
   } catch (error) {
     console.error('Error creating property:', error);
     res.status(500).json({ error: 'Failed to create property' });
@@ -70,21 +87,12 @@ router.post('/', async (req: Request, res: Response) => {
 // Update property
 router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const fields = req.body;
-    const fieldKeys = Object.keys(fields);
-    const fieldValues = Object.values(fields);
-
-    const setClause = fieldKeys.map((key, i) => `${key} = $${i + 1}`).join(', ');
-    const result = await query(
-      `UPDATE properties SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${fieldKeys.length + 1} RETURNING *`,
-      [...fieldValues, id]
-    );
-
-    if (result.rows.length === 0) {
+    const id = String(req.params.id);
+    const property = await updateDocById('properties', id, req.body);
+    if (!property) {
       return res.status(404).json({ error: 'Property not found' });
     }
-    res.json(result.rows[0]);
+    res.json(property);
   } catch (error) {
     console.error('Error updating property:', error);
     res.status(500).json({ error: 'Failed to update property' });
@@ -94,9 +102,9 @@ router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
 // Delete property
 router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const result = await query('DELETE FROM properties WHERE id = $1 RETURNING id', [id]);
-    if (result.rows.length === 0) {
+    const id = String(req.params.id);
+    const deleted = await deleteDocById('properties', id);
+    if (!deleted) {
       return res.status(404).json({ error: 'Property not found' });
     }
     res.json({ message: 'Property deleted', id });
@@ -109,23 +117,21 @@ router.delete('/:id', authMiddleware, async (req: Request, res: Response) => {
 // Get matching buyers for a property
 router.get('/:id/matching-buyers', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const propertyResult = await query('SELECT * FROM properties WHERE id = $1', [id]);
+    const id = String(req.params.id);
+    const property = await getById('properties', id);
 
-    if (propertyResult.rows.length === 0) {
+    if (!property) {
       return res.status(404).json({ error: 'Property not found' });
     }
 
-    const property = propertyResult.rows[0];
-    const propertyPrice = parseFloat(property.price);
+    const propertyPrice = parseFloat(property.price) || 0;
     const propertyType = property.type;
-    const propertyCity = property.city;
-    const propertyBedrooms = property.bedrooms;
-    const propertyBathrooms = property.bathrooms;
+    const propertyCity = property.city || '';
+    const propertyBedrooms = property.bedrooms || 0;
+    const propertyBathrooms = property.bathrooms || 0;
 
     // Find matching buyers
-    const buyersResult = await query('SELECT * FROM buyers');
-    const buyers = buyersResult.rows;
+    const buyers = await getAll('buyers');
 
     const matchingBuyers = buyers.filter(buyer => {
       const budgetMin = parseFloat(buyer.budget_min || 0);

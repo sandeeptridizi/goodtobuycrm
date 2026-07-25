@@ -1,14 +1,19 @@
 import { Router, Request, Response } from 'express';
-import { query } from '../db/index.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { getAll, getById, getWhere, createDoc, updateDocById, deleteDocById } from '../db/index.js';
 
 const router = Router();
+
+function num(value: unknown, fallback: number | null = null): number | null {
+  if (value === undefined || value === null || value === '') return fallback;
+  const n = Number(value);
+  return Number.isNaN(n) ? fallback : n;
+}
 
 // Get all buyers
 router.get('/', async (_req: Request, res: Response) => {
   try {
-    const result = await query('SELECT * FROM buyers ORDER BY created_at DESC');
-    res.json(result.rows);
+    const buyers = await getAll('buyers');
+    res.json(buyers);
   } catch (error) {
     console.error('Error fetching buyers:', error);
     res.status(500).json({ error: 'Failed to fetch buyers' });
@@ -18,12 +23,12 @@ router.get('/', async (_req: Request, res: Response) => {
 // Get single buyer
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const result = await query('SELECT * FROM buyers WHERE id = $1', [id]);
-    if (result.rows.length === 0) {
+    const id = String(req.params.id);
+    const buyer = await getById('buyers', id);
+    if (!buyer) {
       return res.status(404).json({ error: 'Buyer not found' });
     }
-    res.json(result.rows[0]);
+    res.json(buyer);
   } catch (error) {
     console.error('Error fetching buyer:', error);
     res.status(500).json({ error: 'Failed to fetch buyer' });
@@ -40,38 +45,29 @@ router.post('/', async (req: Request, res: Response) => {
       notes, timeline, financing, amenities_required, assigned_agent
     } = req.body;
 
-    const result = await query(
-      `INSERT INTO buyers (
-        name, email, phone, budget_min, budget_max, property_types,
-        min_bedrooms, max_bedrooms, min_bathrooms, max_bathrooms,
-        min_area, preferred_locations, avatar, status, lead_source,
-        notes, timeline, financing, amenities_required, assigned_agent
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
-      RETURNING *`,
-      [
-        name,
-        email || null,
-        phone,
-        budget_min || null,
-        budget_max || null,
-        property_types || [],
-        min_bedrooms || 0,
-        max_bedrooms || 10,
-        min_bathrooms || 0,
-        max_bathrooms || 10,
-        min_area || 0,
-        preferred_locations || [],
-        avatar || null,
-        status || 'Active',
-        lead_source || null,
-        notes || null,
-        timeline || null,
-        financing || null,
-        amenities_required || [],
-        assigned_agent || null
-      ]
-    );
-    res.status(201).json(result.rows[0]);
+    const buyer = await createDoc('buyers', {
+      name,
+      email: email || null,
+      phone,
+      budget_min: num(budget_min),
+      budget_max: num(budget_max),
+      property_types: Array.isArray(property_types) ? property_types : [],
+      min_bedrooms: num(min_bedrooms, 0),
+      max_bedrooms: num(max_bedrooms, 10),
+      min_bathrooms: num(min_bathrooms, 0),
+      max_bathrooms: num(max_bathrooms, 10),
+      min_area: num(min_area, 0),
+      preferred_locations: Array.isArray(preferred_locations) ? preferred_locations : [],
+      avatar: avatar || null,
+      status: status || 'Active',
+      lead_source: lead_source || null,
+      notes: notes || null,
+      timeline: timeline || null,
+      financing: financing || null,
+      amenities_required: Array.isArray(amenities_required) ? amenities_required : [],
+      assigned_agent: assigned_agent || null,
+    });
+    res.status(201).json(buyer);
   } catch (error) {
     console.error('Error creating buyer:', error);
     res.status(500).json({ error: 'Failed to create buyer' });
@@ -81,35 +77,19 @@ router.post('/', async (req: Request, res: Response) => {
 // Update buyer
 router.put('/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const fields = req.body;
-    const fieldKeys = Object.keys(fields);
-    const fieldValues: unknown[] = Object.values(fields);
+    const id = String(req.params.id);
+    const fields = { ...req.body };
 
-    // Convert array fields to PostgreSQL array format
-    const processedValues = fieldValues.map((value) => {
-      if (Array.isArray(value)) {
-        // Convert JS array to PostgreSQL array format: {item1,item2}
-        if (value.length === 0) return '{}';
-        return `{${value.map(v => `"${String(v).replace(/"/g, '\\"')}"`).join(',')}}`;
-      }
-      // Convert 0 to null for foreign key fields to avoid FK violations
-      if (value === 0 || value === "0") {
-        return null;
-      }
-      return value;
-    });
+    // "0" means "no agent assigned" — store null instead
+    if (fields.assigned_agent === 0 || fields.assigned_agent === '0') {
+      fields.assigned_agent = null;
+    }
 
-    const setClause = fieldKeys.map((key, i) => `${key} = $${i + 1}`).join(', ');
-    const result = await query(
-      `UPDATE buyers SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${fieldKeys.length + 1} RETURNING *`,
-      [...processedValues, id]
-    );
-
-    if (result.rows.length === 0) {
+    const buyer = await updateDocById('buyers', id, fields);
+    if (!buyer) {
       return res.status(404).json({ error: 'Buyer not found' });
     }
-    res.json(result.rows[0]);
+    res.json(buyer);
   } catch (error) {
     console.error('Error updating buyer:', error);
     res.status(500).json({ error: 'Failed to update buyer' });
@@ -119,9 +99,9 @@ router.put('/:id', async (req: Request, res: Response) => {
 // Delete buyer
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const result = await query('DELETE FROM buyers WHERE id = $1 RETURNING id', [id]);
-    if (result.rows.length === 0) {
+    const id = String(req.params.id);
+    const deleted = await deleteDocById('buyers', id);
+    if (!deleted) {
       return res.status(404).json({ error: 'Buyer not found' });
     }
     res.json({ message: 'Buyer deleted', id });
@@ -134,14 +114,13 @@ router.delete('/:id', async (req: Request, res: Response) => {
 // Get matching properties for a buyer
 router.get('/:id/matching-properties', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const buyerResult = await query('SELECT * FROM buyers WHERE id = $1', [id]);
+    const id = String(req.params.id);
+    const buyer = await getById('buyers', id);
 
-    if (buyerResult.rows.length === 0) {
+    if (!buyer) {
       return res.status(404).json({ error: 'Buyer not found' });
     }
 
-    const buyer = buyerResult.rows[0];
     const budgetMin = parseFloat(buyer.budget_min || 0);
     const budgetMax = parseFloat(buyer.budget_max || 0);
     const propertyTypes = buyer.property_types || [];
@@ -151,29 +130,32 @@ router.get('/:id/matching-properties', async (req: Request, res: Response) => {
     const minBathrooms = buyer.min_bathrooms || 0;
     const minArea = buyer.min_area || 0;
 
-    const propertiesResult = await query('SELECT * FROM properties WHERE status = $1', ['Available']);
-    const properties = propertiesResult.rows;
+    const properties = await getWhere('properties', 'status', '==', 'Available');
 
     const matchingProperties = properties.filter(property => {
-      const propertyPrice = parseFloat(property.price);
+      const propertyPrice = parseFloat(property.price) || 0;
+      const propertyCity = property.city || '';
 
       const meetsPrice = propertyPrice >= budgetMin && propertyPrice <= budgetMax;
       const meetsType = propertyTypes.length === 0 || propertyTypes.includes(property.type);
-      const meetsBedrooms = property.bedrooms >= minBedrooms && property.bedrooms <= maxBedrooms;
-      const meetsBathrooms = property.bathrooms >= minBathrooms;
-      const meetsArea = property.area >= minArea;
+      const meetsBedrooms = (property.bedrooms || 0) >= minBedrooms && (property.bedrooms || 0) <= maxBedrooms;
+      const meetsBathrooms = (property.bathrooms || 0) >= minBathrooms;
+      const meetsArea = (property.area || 0) >= minArea;
       const meetsLocation = locations.length === 0 ||
-        locations.some((loc: string) => property.city.toLowerCase().includes(loc.toLowerCase()));
+        locations.some((loc: string) => propertyCity.toLowerCase().includes(loc.toLowerCase()));
 
       return meetsPrice && meetsType && meetsBedrooms && meetsBathrooms && meetsArea && meetsLocation;
     }).map(property => {
+      const propertyPrice = parseFloat(property.price) || 0;
+      const propertyCity = property.city || '';
+
       let matchScore = 0;
       if (propertyPrice >= budgetMin && propertyPrice <= budgetMax) matchScore += 30;
       if (propertyTypes.includes(property.type)) matchScore += 25;
-      if (property.bedrooms >= minBedrooms && property.bedrooms <= maxBedrooms) matchScore += 20;
-      if (property.bathrooms >= minBathrooms) matchScore += 15;
-      if (property.area >= minArea) matchScore += 5;
-      if (locations.some((loc: string) => property.city.toLowerCase().includes(loc.toLowerCase()))) matchScore += 5;
+      if ((property.bedrooms || 0) >= minBedrooms && (property.bedrooms || 0) <= maxBedrooms) matchScore += 20;
+      if ((property.bathrooms || 0) >= minBathrooms) matchScore += 15;
+      if ((property.area || 0) >= minArea) matchScore += 5;
+      if (locations.some((loc: string) => propertyCity.toLowerCase().includes(loc.toLowerCase()))) matchScore += 5;
       return { ...property, matchScore };
     }).sort((a, b) => b.matchScore - a.matchScore);
 
