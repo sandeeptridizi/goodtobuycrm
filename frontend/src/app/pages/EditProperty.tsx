@@ -132,6 +132,12 @@ export default function EditProperty() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  useEffect(() => {
+    const year = parseInt(formData.yearBuilt, 10);
+    const age = year > 0 ? Math.max(0, new Date().getFullYear() - year) : "";
+    setFormData(prev => (prev.buildingAge === String(age) ? prev : { ...prev, buildingAge: String(age) }));
+  }, [formData.yearBuilt]);
+
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -458,7 +464,7 @@ export default function EditProperty() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="landArea">Land Area (sq ft)</Label>
+                  <Label htmlFor="landArea">UDS / Land Area (Sq yards)</Label>
                   <Input
                     id="landArea"
                     name="landArea"
@@ -487,10 +493,10 @@ export default function EditProperty() {
                     id="buildingAge"
                     name="buildingAge"
                     value={formData.buildingAge}
-                    onChange={handleChange}
+                    readOnly
                     type="number"
-                    placeholder="4"
-                    className="mt-1"
+                    placeholder="Calculated from Year Built"
+                    className="mt-1 bg-gray-50 cursor-not-allowed"
                   />
                 </div>
                 <div>

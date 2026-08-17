@@ -272,8 +272,8 @@ export default function ViewProperty() {
                   <div className="flex items-start gap-3">
                     <Square className="w-5 h-5 text-[#00AEEF] mt-1" />
                     <div>
-                      <p className="text-sm text-gray-500">Land Area</p>
-                      <p className="font-semibold text-gray-900">{property.land_area} sq ft</p>
+                      <p className="text-sm text-gray-500">UDS / Land Area</p>
+                      <p className="font-semibold text-gray-900">{property.land_area} sq yd</p>
                     </div>
                   </div>
                 )}

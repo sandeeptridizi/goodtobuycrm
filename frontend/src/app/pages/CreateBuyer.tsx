@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "../components/ui/button";
@@ -7,7 +7,9 @@ import { Label } from "../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { LocationAutosuggest } from "../components/LocationAutosuggest";
 import { useBuyers } from "../../hooks/useBuyers";
+import { useProperties } from "../../hooks/useProperties";
 import { toast } from "sonner";
 
 const propertyTypesOptions = [
@@ -43,6 +45,12 @@ const amenitiesOptions = [
 export default function CreateBuyer() {
   const navigate = useNavigate();
   const { create } = useBuyers();
+  const { data: properties } = useProperties();
+
+  const locationSuggestions = useMemo(
+    () => Array.from(new Set(properties.map((p) => p.city).filter(Boolean))).sort(),
+    [properties]
+  );
 
   const [formData, setFormData] = useState({
     name: "",
@@ -406,11 +414,19 @@ export default function CreateBuyer() {
             </CardHeader>
             <CardContent>
               <div className="flex gap-2 mb-4">
-                <Input
+                <LocationAutosuggest
                   value={newLocation}
-                  onChange={(e) => setNewLocation(e.target.value)}
+                  onChange={setNewLocation}
+                  onEnter={addLocation}
+                  onSelect={(location) => {
+                    setPreferredLocations(prev =>
+                      prev.includes(location) ? prev : [...prev, location]
+                    );
+                    setNewLocation("");
+                  }}
+                  suggestions={locationSuggestions}
+                  excludeValues={preferredLocations}
                   placeholder="Add a preferred location"
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addLocation())}
                 />
                 <Button type="button" onClick={addLocation} variant="outline">
                   Add
