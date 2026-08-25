@@ -1,41 +1,37 @@
-import { initializeApp } from 'firebase/app';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import {
   getFirestore,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query as firestoreQuery,
-  where,
-  orderBy,
   type WhereFilterOp,
   type QueryDocumentSnapshot,
   type DocumentSnapshot,
-} from 'firebase/firestore';
+} from 'firebase-admin/firestore';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import path from 'path';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID,
-};
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  throw new Error(
-    'Missing Firebase configuration. Set FIREBASE_API_KEY, FIREBASE_PROJECT_ID (and the other FIREBASE_* vars) in backend/.env'
-  );
+const serviceAccountPath =
+  process.env.FIREBASE_SERVICE_ACCOUNT_PATH || path.resolve(__dirname, '../../serviceAccountKey.json');
+
+if (!getApps().length) {
+  let serviceAccount: Record<string, unknown>;
+  try {
+    serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf-8'));
+  } catch (error) {
+    throw new Error(
+      `Could not read Firebase service account key at "${serviceAccountPath}". ` +
+        'Generate one from Firebase Console > Project settings > Service accounts, ' +
+        'save it there (or set FIREBASE_SERVICE_ACCOUNT_PATH in backend/.env to its location).'
+    );
+  }
+  initializeApp({ credential: cert(serviceAccount) });
 }
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+export const db = getFirestore();
 
 export type DocData = { id: string } & Record<string, any>;
 
@@ -57,8 +53,7 @@ export async function getAll(
   orderField = 'created_at',
   direction: 'asc' | 'desc' = 'desc'
 ): Promise<DocData[]> {
-  const q = firestoreQuery(collection(db, collectionName), orderBy(orderField, direction));
-  const snapshot = await getDocs(q);
+  const snapshot = await db.collection(collectionName).orderBy(orderField, direction).get();
   return snapshot.docs.map(toDocData);
 }
 
@@ -68,14 +63,13 @@ export async function getWhere(
   op: WhereFilterOp,
   value: unknown
 ): Promise<DocData[]> {
-  const q = firestoreQuery(collection(db, collectionName), where(field, op, value));
-  const snapshot = await getDocs(q);
+  const snapshot = await db.collection(collectionName).where(field, op, value).get();
   return snapshot.docs.map(toDocData);
 }
 
 export async function getById(collectionName: string, id: string): Promise<DocData | null> {
-  const snap = await getDoc(doc(db, collectionName, id));
-  return snap.exists() ? toDocData(snap) : null;
+  const snap = await db.collection(collectionName).doc(id).get();
+  return snap.exists ? toDocData(snap) : null;
 }
 
 export async function createDoc(
@@ -84,7 +78,7 @@ export async function createDoc(
 ): Promise<DocData> {
   const now = new Date().toISOString();
   const payload = { ...sanitize(data), created_at: now, updated_at: now };
-  const ref = await addDoc(collection(db, collectionName), payload);
+  const ref = await db.collection(collectionName).add(payload);
   return { id: ref.id, ...payload };
 }
 
@@ -93,22 +87,22 @@ export async function updateDocById(
   id: string,
   data: Record<string, unknown>
 ): Promise<DocData | null> {
-  const ref = doc(db, collectionName, id);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) {
+  const ref = db.collection(collectionName).doc(id);
+  const snap = await ref.get();
+  if (!snap.exists) {
     return null;
   }
   const payload = { ...sanitize(data), updated_at: new Date().toISOString() };
-  await updateDoc(ref, payload);
+  await ref.update(payload);
   return { id, ...snap.data(), ...payload };
 }
 
 export async function deleteDocById(collectionName: string, id: string): Promise<boolean> {
-  const ref = doc(db, collectionName, id);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) {
+  const ref = db.collection(collectionName).doc(id);
+  const snap = await ref.get();
+  if (!snap.exists) {
     return false;
   }
-  await deleteDoc(ref);
+  await ref.delete();
   return true;
 }
