@@ -22,6 +22,13 @@ import Employees from "./pages/Employees";
 import CreateEmployee from "./pages/CreateEmployee";
 import EditEmployee from "./pages/EditEmployee";
 import ViewEmployee from "./pages/ViewEmployee";
+import Workers from "./pages/Workers";
+import CreateWorker from "./pages/CreateWorker";
+import EditWorker from "./pages/EditWorker";
+import Promotions from "./pages/Promotions";
+import EditPromotion from "./pages/EditPromotion";
+import FieldLogin from "./pages/field/FieldLogin";
+import FieldSubmit from "./pages/field/FieldSubmit";
 
 function RequireAuth() {
   const { user, isLoading } = useAuth();
@@ -46,6 +53,14 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     Component: Login,
+  },
+  {
+    path: "/field/login",
+    Component: FieldLogin,
+  },
+  {
+    path: "/field",
+    Component: FieldSubmit,
   },
   {
     element: <RequireAuth />,
@@ -74,6 +89,11 @@ export const router = createBrowserRouter([
           { path: "employees/create", Component: CreateEmployee },
           { path: "employees/:id", Component: ViewEmployee },
           { path: "employees/:id/edit", Component: EditEmployee },
+          { path: "workers", Component: Workers },
+          { path: "workers/create", Component: CreateWorker },
+          { path: "workers/:id/edit", Component: EditWorker },
+          { path: "promotions", Component: Promotions },
+          { path: "promotions/:id/edit", Component: EditPromotion },
         ],
       },
     ],

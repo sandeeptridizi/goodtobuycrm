@@ -8,6 +8,9 @@ import sellersRoutes from './routes/sellers.js';
 import enquiriesRoutes from './routes/enquiries.js';
 import employeesRoutes from './routes/employees.js';
 import dashboardRoutes from './routes/dashboard.js';
+import workersRoutes from './routes/workers.js';
+import workerAuthRoutes from './routes/workerAuth.js';
+import promotionsRoutes from './routes/promotions.js';
 import './db/index.js';
 
 dotenv.config();
@@ -26,6 +29,9 @@ app.use('/api/sellers', sellersRoutes);
 app.use('/api/enquiries', enquiriesRoutes);
 app.use('/api/employees', employeesRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/workers', workersRoutes);
+app.use('/api/worker-auth', workerAuthRoutes);
+app.use('/api/promotions', promotionsRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

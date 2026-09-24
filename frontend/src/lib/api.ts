@@ -176,3 +176,103 @@ export const employees = {
     return response.data;
   },
 };
+
+// Field Workers (admin-managed credentials)
+export const workers = {
+  getAll: async () => {
+    const response = await apiClient.get('/workers');
+    return response.data;
+  },
+  getOne: async (id: string | number) => {
+    const response = await apiClient.get(`/workers/${id}`);
+    return response.data;
+  },
+  create: async (data: Record<string, unknown>) => {
+    const response = await apiClient.post('/workers', data);
+    return response.data;
+  },
+  update: async (id: string | number, data: Record<string, unknown>) => {
+    const response = await apiClient.put(`/workers/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string | number) => {
+    const response = await apiClient.delete(`/workers/${id}`);
+    return response.data;
+  },
+};
+
+// Promotions (leads submitted by field workers) — admin side
+export const promotions = {
+  getAll: async (status?: string) => {
+    const response = await apiClient.get('/promotions', { params: status ? { status } : undefined });
+    return response.data;
+  },
+  getOne: async (id: string | number) => {
+    const response = await apiClient.get(`/promotions/${id}`);
+    return response.data;
+  },
+  updateStatus: async (id: string | number, status: string) => {
+    const response = await apiClient.patch(`/promotions/${id}/status`, { status });
+    return response.data;
+  },
+  update: async (id: string | number, data: Record<string, unknown>) => {
+    const response = await apiClient.put(`/promotions/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string | number) => {
+    const response = await apiClient.delete(`/promotions/${id}`);
+    return response.data;
+  },
+};
+
+// --- Field worker (public, mobile) client ---
+// Field workers authenticate separately from admin users, so they get their
+// own axios instance/token/401 redirect rather than sharing `apiClient`.
+const workerApiClient = axios.create({
+  baseURL: `${API_URL}/api`,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+workerApiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('worker_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+workerApiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('worker_token');
+      localStorage.removeItem('worker_user');
+      window.location.href = '/field/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const workerAuth = {
+  login: async (email: string, password: string) => {
+    const response = await workerApiClient.post('/worker-auth/login', { email, password });
+    return response.data;
+  },
+  verify: async () => {
+    const response = await workerApiClient.post('/worker-auth/verify');
+    return response.data;
+  },
+};
+
+export const workerPromotions = {
+  submit: async (data: Record<string, unknown>) => {
+    const response = await workerApiClient.post('/promotions', data);
+    return response.data;
+  },
+  getCount: async () => {
+    const response = await workerApiClient.get('/promotions/count');
+    return response.data as { count: number };
+  },
+};

@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router";
-import { Building2, Home, Users, UserCheck, Mail, Briefcase, LogOut } from "lucide-react";
+import { Building2, Home, Users, UserCheck, Mail, Briefcase, HardHat, Megaphone, LogOut } from "lucide-react";
 import { ImageWithFallback } from "../components/Imgfb/ImageWithFallback";
 import { useAuth } from "../contexts/AuthContext";
 import logo from "../../assets/GoodToBuy Logo.png";
@@ -11,6 +11,8 @@ const navigation = [
   { name: "Sellers", href: "/sellers", icon: UserCheck },
   { name: "Enquiries", href: "/enquiries", icon: Mail },
   { name: "Employees", href: "/employees", icon: Briefcase },
+  { name: "Field Workers", href: "/workers", icon: HardHat },
+  { name: "Promotions", href: "/promotions", icon: Megaphone },
 ];
 
 export default function DashboardLayout() {

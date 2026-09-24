@@ -19,7 +19,12 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as {
       userId: string;
       email: string;
+      role?: string;
     };
+    // Worker tokens are a distinct credential space — never valid for admin routes.
+    if (decoded.role === 'worker') {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
     req.userId = decoded.userId;
     req.userEmail = decoded.email;
     next();
