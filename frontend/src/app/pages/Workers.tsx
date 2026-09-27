@@ -1,15 +1,24 @@
 import { useState } from "react";
-import { Search, Mail as MailIcon, Phone, HardHat } from "lucide-react";
+import { Search, Mail as MailIcon, Phone, HardHat, Pencil, Building2 } from "lucide-react";
 import { useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Card, CardContent } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
 import { useWorkers, Worker } from "../../hooks/useWorkers";
+import { usePromotions } from "../../hooks/usePromotions";
 
 export default function Workers() {
   const { data: workers, loading, error } = useWorkers();
+  const { data: promotions } = usePromotions();
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+
+  const metricsByWorker = (workerId: string) => {
+    const listed = promotions.filter((p) => p.worker_id === workerId);
+    const paid = listed.filter((p) => p.is_paid).length;
+    return { listed: listed.length, paid, unpaid: listed.length - paid };
+  };
 
   const filteredWorkers = workers.filter(
     (worker: Worker) =>
@@ -76,38 +85,65 @@ export default function Workers() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredWorkers.map((worker: Worker) => (
-            <Card
-              key={worker.id}
-              className="cursor-pointer hover:shadow-xl hover:scale-[1.01] transition-all duration-200 border-[#00AEEF]/10 hover:border-[#00AEEF]/30 bg-white/80 backdrop-blur-sm"
-              onClick={() => navigate(`/workers/${worker.id}/edit`)}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4 mb-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00AEEF] to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#00AEEF]/30">
-                    <HardHat className="w-7 h-7 text-white" />
+          {filteredWorkers.map((worker: Worker) => {
+            const metrics = metricsByWorker(worker.id);
+            return (
+              <Card
+                key={worker.id}
+                className="cursor-pointer hover:shadow-xl hover:scale-[1.01] transition-all duration-200 border-[#00AEEF]/10 hover:border-[#00AEEF]/30 bg-white/80 backdrop-blur-sm"
+                onClick={() => navigate(`/workers/${worker.id}`)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00AEEF] to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-[#00AEEF]/30">
+                      <HardHat className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-[#004274]">{worker.name}</h3>
+                      <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full mt-2 ${getStatusColor(worker.status)}`}>
+                        {worker.status}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-slate-500 hover:text-[#00AEEF]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/workers/${worker.id}/edit`);
+                      }}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-[#004274]">{worker.name}</h3>
-                    <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full mt-2 ${getStatusColor(worker.status)}`}>
-                      {worker.status}
-                    </span>
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <MailIcon className="w-4 h-4 flex-shrink-0 text-[#00AEEF]" />
-                    {worker.email}
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <MailIcon className="w-4 h-4 flex-shrink-0 text-[#00AEEF]" />
+                      {worker.email}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Phone className="w-4 h-4 flex-shrink-0 text-[#00AEEF]" />
+                      {worker.phone || 'Not provided'}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Phone className="w-4 h-4 flex-shrink-0 text-[#00AEEF]" />
-                    {worker.phone || 'Not provided'}
+
+                  <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
+                    <Badge variant="secondary" className="gap-1 bg-blue-50 text-blue-700">
+                      <Building2 className="w-3 h-3" />
+                      {metrics.listed} Listed
+                    </Badge>
+                    <Badge className="bg-gradient-to-r from-green-400 to-green-500 text-white">
+                      {metrics.paid} Paid
+                    </Badge>
+                    <Badge className="bg-gradient-to-r from-amber-400 to-amber-500 text-white">
+                      {metrics.unpaid} Unpaid
+                    </Badge>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

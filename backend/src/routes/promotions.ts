@@ -60,6 +60,9 @@ router.post('/', workerAuthMiddleware, async (req: WorkerAuthRequest, res: Respo
       // CreateProperty.tsx uses for property images — no separate file storage wired up.
       photo_url: photo_base64,
       status: 'New',
+      commission_amount: 0,
+      is_paid: false,
+      paid_at: null,
     });
     res.status(201).json(promotion);
   } catch (error) {
@@ -133,6 +136,7 @@ router.patch('/:id/status', authMiddleware, async (req: Request, res: Response) 
 const UPDATABLE_PROMOTION_FIELDS = [
   'property_name', 'flat_no', 'flat_type', 'square_feet', 'furnishing_type',
   'address', 'location_area', 'phone', 'alternate_phone', 'gps_lat', 'gps_lng',
+  'commission_amount', 'is_paid', 'paid_at',
 ] as const;
 
 // Update lead details (admin)

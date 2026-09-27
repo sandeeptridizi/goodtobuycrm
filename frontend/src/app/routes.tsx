@@ -25,6 +25,7 @@ import ViewEmployee from "./pages/ViewEmployee";
 import Workers from "./pages/Workers";
 import CreateWorker from "./pages/CreateWorker";
 import EditWorker from "./pages/EditWorker";
+import ViewWorker from "./pages/ViewWorker";
 import Promotions from "./pages/Promotions";
 import EditPromotion from "./pages/EditPromotion";
 import FieldLogin from "./pages/field/FieldLogin";
@@ -92,6 +93,7 @@ export const router = createBrowserRouter([
           { path: "workers", Component: Workers },
           { path: "workers/create", Component: CreateWorker },
           { path: "workers/:id/edit", Component: EditWorker },
+          { path: "workers/:id", Component: ViewWorker },
           { path: "promotions", Component: Promotions },
           { path: "promotions/:id/edit", Component: EditPromotion },
         ],

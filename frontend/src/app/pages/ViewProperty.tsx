@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../components/ui/alert-dialog";
 import { useProperty, Property, useMatchingBuyers, useProperties } from "../../hooks/useProperties";
+import { useWorkers } from "../../hooks/useWorkers";
 import { Buyer } from "../../hooks/useBuyers";
 import { formatPrice } from "../../hooks/useDashboard";
 import { toast } from "sonner";
@@ -16,9 +17,31 @@ export default function ViewProperty() {
   const propertyId = String(id);
   const { data: property, loading: propertyLoading, error: propertyError } = useProperty(propertyId);
   const { data: matchingBuyers, loading: buyersLoading } = useMatchingBuyers(propertyId);
-  const { remove } = useProperties();
+  const { remove, update } = useProperties();
+  const { data: workers } = useWorkers();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isTogglingPaid, setIsTogglingPaid] = useState(false);
+
+  const assignedWorker = workers.find((w) => w.id === property?.worker_id);
+
+  const handleTogglePaid = async () => {
+    if (!property) return;
+    setIsTogglingPaid(true);
+    try {
+      const nextPaid = !property.is_paid;
+      await update(propertyId, {
+        is_paid: nextPaid,
+        paid_at: nextPaid ? new Date().toISOString() : null,
+      });
+      toast.success(nextPaid ? "Marked as paid" : "Marked as unpaid");
+    } catch (error) {
+      console.error("Failed to update payment status:", error);
+      toast.error("Failed to update payment status. Please try again.");
+    } finally {
+      setIsTogglingPaid(false);
+    }
+  };
 
   // Reset index when property changes
   useEffect(() => {
@@ -393,17 +416,19 @@ export default function ViewProperty() {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#00AEEF] to-[#0096d1] flex items-center justify-center shadow-md">
-                  <span className="text-white text-xl font-bold">GTB</span>
+                  <span className="text-white text-xl font-bold">
+                    {assignedWorker ? assignedWorker.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : "GTB"}
+                  </span>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">GoodToBuy Team</h3>
-                  <p className="text-sm text-gray-600">Property Agent</p>
+                  <h3 className="font-semibold text-gray-900">{assignedWorker?.name || "GoodToBuy Team"}</h3>
+                  <p className="text-sm text-gray-600">{assignedWorker ? "Field Worker" : "Property Agent"}</p>
                 </div>
               </div>
               <div className="space-y-2 pt-3 border-t border-blue-100">
                 <div className="flex items-center gap-2 text-sm">
                   <Mail className="w-4 h-4 text-blue-600" />
-                  <span className="text-gray-700">contact@goodtobuy.in</span>
+                  <span className="text-gray-700">{assignedWorker?.email || "contact@goodtobuy.in"}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="w-4 h-4 text-blue-600" />
@@ -412,6 +437,40 @@ export default function ViewProperty() {
                   </span>
                 </div>
               </div>
+              {assignedWorker && (
+                <div className="space-y-2 pt-3 border-t border-blue-100">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Verification</span>
+                    <Badge className={
+                      property.verification_status === "Verified"
+                        ? "bg-gradient-to-r from-green-400 to-green-500 text-white"
+                        : property.verification_status === "Rejected"
+                        ? "bg-gradient-to-r from-red-400 to-red-500 text-white"
+                        : "bg-gradient-to-r from-gray-400 to-gray-500 text-white"
+                    }>
+                      {property.verification_status || "Pending"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Commission</span>
+                    <span className="font-semibold text-gray-900">{formatPrice(property.commission_amount || 0)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Payment Status</span>
+                    <Badge className={property.is_paid ? "bg-gradient-to-r from-green-400 to-green-500 text-white" : "bg-gradient-to-r from-amber-400 to-amber-500 text-white"}>
+                      {property.is_paid ? "Paid" : "Unpaid"}
+                    </Badge>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleTogglePaid}
+                    disabled={isTogglingPaid}
+                  >
+                    {isTogglingPaid ? "Updating..." : property.is_paid ? "Mark as Unpaid" : "Mark as Paid"}
+                  </Button>
+                </div>
+              )}
               <Button className="w-full mt-3 bg-gradient-to-r from-[#00AEEF] to-[#0096d1] hover:opacity-90">
                 <Phone className="w-4 h-4 mr-2" />
                 Contact Agent

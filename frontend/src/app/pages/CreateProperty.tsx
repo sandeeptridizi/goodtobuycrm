@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { useProperties } from "../../hooks/useProperties";
+import { useWorkers } from "../../hooks/useWorkers";
 import { toast } from "sonner";
 
 const amenitiesOptions = {
@@ -56,6 +57,7 @@ const amenitiesOptions = {
 export default function CreateProperty() {
   const navigate = useNavigate();
   const { create } = useProperties();
+  const { data: workers } = useWorkers();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -83,6 +85,8 @@ export default function CreateProperty() {
     boundary: "",
     youtubeUrl: "",
     instagramUrl: "",
+    workerId: "",
+    commissionAmount: "",
   });
 
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
@@ -205,6 +209,8 @@ export default function CreateProperty() {
         images: imagePreviews,
         youtube_url: formData.youtubeUrl,
         instagram_url: formData.instagramUrl,
+        worker_id: formData.workerId || null,
+        commission_amount: parsePrice(formData.commissionAmount),
       };
 
       await create(propertyData);
@@ -714,6 +720,43 @@ export default function CreateProperty() {
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Field Worker Assignment</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="workerId">Listed By Field Worker</Label>
+                  <Select value={formData.workerId} onValueChange={(value) => handleSelectChange("workerId", value)}>
+                    <SelectTrigger id="workerId" className="mt-1">
+                      <SelectValue placeholder="Select field worker (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {workers.map((worker) => (
+                        <SelectItem key={worker.id} value={worker.id}>{worker.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">Attribute this listing to the field worker who sourced it</p>
+                </div>
+                <div>
+                  <Label htmlFor="commissionAmount">Commission Amount</Label>
+                  <Input
+                    id="commissionAmount"
+                    name="commissionAmount"
+                    value={formData.commissionAmount}
+                    onChange={handleChange}
+                    type="text"
+                    placeholder="5,000"
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Amount owed to the field worker for this listing</p>
                 </div>
               </div>
             </CardContent>

@@ -18,6 +18,9 @@ export interface Promotion {
   gps_lng: number;
   photo_url: string;
   status: string;
+  commission_amount: number;
+  is_paid: boolean;
+  paid_at: string | null;
   created_at: string;
   updated_at: string;
 }

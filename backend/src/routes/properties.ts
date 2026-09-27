@@ -44,7 +44,8 @@ router.post('/', async (req: Request, res: Response) => {
       price, type, status, bedrooms, bathrooms, area,
       land_area, year_built, building_age, floors, car_parking,
       parking_size, facing, water_source, drain_type, boundary_wall,
-      rental_income, amenities, images, youtube_url, instagram_url
+      rental_income, amenities, images, youtube_url, instagram_url,
+      worker_id, commission_amount
     } = req.body;
 
     const property = await createDoc('properties', {
@@ -76,6 +77,11 @@ router.post('/', async (req: Request, res: Response) => {
       youtube_url,
       instagram_url,
       added_by: (req as AuthRequest).userId ?? null,
+      worker_id: worker_id || null,
+      commission_amount: num(commission_amount, 0),
+      is_paid: false,
+      paid_at: null,
+      verification_status: 'Pending',
     });
     res.status(201).json(property);
   } catch (error) {

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Textarea } from "../components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { useProperty, useProperties } from "../../hooks/useProperties";
+import { useWorkers } from "../../hooks/useWorkers";
 import { toast } from "sonner";
 
 const amenitiesOptions = {
@@ -59,6 +60,7 @@ export default function EditProperty() {
   const propertyId = String(id);
   const { data: property, loading: propertyLoading, error: propertyError } = useProperty(propertyId);
   const { update } = useProperties();
+  const { data: workers } = useWorkers();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -86,6 +88,10 @@ export default function EditProperty() {
     status: "",
     youtubeUrl: "",
     instagramUrl: "",
+    workerId: "",
+    commissionAmount: "",
+    isPaid: "unpaid",
+    verificationStatus: "Pending",
   });
 
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
@@ -121,6 +127,10 @@ export default function EditProperty() {
         status: property.status || "",
         youtubeUrl: property.youtube_url || "",
         instagramUrl: property.instagram_url || "",
+        workerId: property.worker_id || "",
+        commissionAmount: property.commission_amount?.toString() || "",
+        isPaid: property.is_paid ? "paid" : "unpaid",
+        verificationStatus: property.verification_status || "Pending",
       });
       setSelectedAmenities(property.amenities || []);
       setImagePreviews(property.images || []);
@@ -209,6 +219,11 @@ export default function EditProperty() {
         images: imagePreviews,
         youtube_url: formData.youtubeUrl,
         instagram_url: formData.instagramUrl,
+        worker_id: formData.workerId || null,
+        commission_amount: parsePrice(formData.commissionAmount),
+        is_paid: formData.isPaid === "paid",
+        paid_at: formData.isPaid === "paid" ? (property?.paid_at || new Date().toISOString()) : null,
+        verification_status: formData.verificationStatus,
       };
 
       await update(propertyId, propertyData);
@@ -698,6 +713,66 @@ export default function EditProperty() {
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Field Worker Assignment & Payment</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="workerId">Listed By Field Worker</Label>
+                  <Select value={formData.workerId} onValueChange={(value) => handleSelectChange("workerId", value)}>
+                    <SelectTrigger id="workerId" className="mt-1">
+                      <SelectValue placeholder="Select field worker (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {workers.map((worker) => (
+                        <SelectItem key={worker.id} value={worker.id}>{worker.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="commissionAmount">Commission Amount</Label>
+                  <Input
+                    id="commissionAmount"
+                    name="commissionAmount"
+                    value={formData.commissionAmount}
+                    onChange={handleChange}
+                    type="text"
+                    placeholder="5,000"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="isPaid">Payment Status</Label>
+                  <Select value={formData.isPaid} onValueChange={(value) => handleSelectChange("isPaid", value)}>
+                    <SelectTrigger id="isPaid" className="mt-1">
+                      <SelectValue placeholder="Select payment status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="verificationStatus">Verification Status</Label>
+                  <Select value={formData.verificationStatus} onValueChange={(value) => handleSelectChange("verificationStatus", value)}>
+                    <SelectTrigger id="verificationStatus" className="mt-1">
+                      <SelectValue placeholder="Select verification status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Verified">Verified</SelectItem>
+                      <SelectItem value="Rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardContent>

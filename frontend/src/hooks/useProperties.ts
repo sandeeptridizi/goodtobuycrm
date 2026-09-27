@@ -31,6 +31,11 @@ export interface Property {
   youtube_url: string;
   instagram_url: string;
   added_by: number;
+  worker_id: string | null;
+  commission_amount: number;
+  is_paid: boolean;
+  paid_at: string | null;
+  verification_status: "Pending" | "Verified" | "Rejected";
   created_at: string;
   updated_at: string;
   matchScore?: number;

@@ -6,6 +6,7 @@ import { Input } from "../components/ui/input";
 import { Card, CardContent } from "../components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { usePromotions } from "../../hooks/usePromotions";
+import { useWorkers } from "../../hooks/useWorkers";
 import { toast } from "sonner";
 
 const STATUS_OPTIONS = ["All", "New", "Contacted", "Interested", "Not Interested", "Converted"];
@@ -21,21 +22,32 @@ const STATUS_COLORS: Record<string, string> = {
 export default function Promotions() {
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState("All");
+  const [workerFilter, setWorkerFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const { data: promotions, loading, error, updateStatus, remove } = usePromotions(
     statusFilter === "All" ? undefined : statusFilter
   );
+  const { data: workers } = useWorkers();
 
   const filtered = useMemo(
     () =>
       promotions.filter(
         (p) =>
-          p.property_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.location_area?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.phone?.includes(searchTerm)
+          (workerFilter === "All" || p.worker_id === workerFilter) &&
+          (p.property_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.location_area?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.phone?.includes(searchTerm))
       ),
-    [promotions, searchTerm]
+    [promotions, searchTerm, workerFilter]
   );
+
+  const countByWorker = useMemo(() => {
+    const counts: Record<string, number> = {};
+    promotions.forEach((p) => {
+      if (p.worker_id) counts[p.worker_id] = (counts[p.worker_id] || 0) + 1;
+    });
+    return counts;
+  }, [promotions]);
 
   const handleStatusChange = async (id: string, status: string) => {
     try {
@@ -92,6 +104,19 @@ export default function Promotions() {
             </button>
           ))}
         </div>
+        <Select value={workerFilter} onValueChange={setWorkerFilter}>
+          <SelectTrigger className="w-full md:w-56 bg-white/80 backdrop-blur-sm border-[#00AEEF]/20">
+            <SelectValue placeholder="Filter by field worker" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="All">All Field Workers</SelectItem>
+            {workers.map((worker) => (
+              <SelectItem key={worker.id} value={worker.id}>
+                {worker.name} ({countByWorker[worker.id] || 0})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {loading ? (
