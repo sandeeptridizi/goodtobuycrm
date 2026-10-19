@@ -13,6 +13,39 @@ const STATUSES = ['New', 'Contacted', 'Interested', 'Not Interested', 'Converted
 const PHONE_PATTERN = /^\d{10}$/;
 const MAX_PHOTOS = 10;
 
+// A lead counts as a duplicate when any of its numbers matches the phone or
+// alternate phone of an existing lead — the number on the sale board is what
+// identifies the property, whichever field worker spotted it first.
+async function findDuplicatePromotion(numbers: unknown[]) {
+  const phones = [...new Set(numbers.map((n) => String(n ?? '').trim()).filter((n) => PHONE_PATTERN.test(n)))];
+  if (phones.length === 0) return null;
+
+  const [byPhone, byAlternate] = await Promise.all([
+    getWhere('promotions', 'phone', 'in', phones),
+    getWhere('promotions', 'alternate_phone', 'in', phones),
+  ]);
+  return byPhone[0] ?? byAlternate[0] ?? null;
+}
+
+// Only what the field worker needs to recognise the lead. The other worker's
+// name isn't shared.
+function describeDuplicate(existing: Record<string, any>, workerId?: string) {
+  return {
+    property_name: existing.property_name,
+    flat_no: existing.flat_no || null,
+    submitted_at: existing.created_at,
+    by_you: existing.worker_id === workerId,
+  };
+}
+
+function duplicateMessage(existing: Record<string, any>, workerId?: string) {
+  const date = new Date(existing.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  const name = existing.flat_no ? `${existing.property_name}, Flat ${existing.flat_no}` : existing.property_name;
+  return existing.worker_id === workerId
+    ? `You already added this property (${name}) on ${date}`
+    : `This property (${name}) was already added on ${date}`;
+}
+
 // Submit a new promotion lead (field worker)
 router.post('/', workerAuthMiddleware, async (req: WorkerAuthRequest, res: Response) => {
   try {
@@ -50,6 +83,15 @@ router.post('/', workerAuthMiddleware, async (req: WorkerAuthRequest, res: Respo
     }
     if (photos.length > MAX_PHOTOS) {
       return res.status(400).json({ error: `You can upload up to ${MAX_PHOTOS} photos` });
+    }
+
+    // Checked before uploading photos so a rejected duplicate leaves nothing in the bucket.
+    const duplicate = await findDuplicatePromotion([phone, alternate_phone]);
+    if (duplicate) {
+      return res.status(409).json({
+        error: duplicateMessage(duplicate, req.workerId),
+        duplicate: describeDuplicate(duplicate, req.workerId),
+      });
     }
 
     let photo_urls: string[];
@@ -99,6 +141,29 @@ router.get('/count', workerAuthMiddleware, async (req: WorkerAuthRequest, res: R
   } catch (error) {
     console.error('Error counting promotions:', error);
     res.status(500).json({ error: 'Failed to fetch count' });
+  }
+});
+
+// Check whether a phone number already belongs to a submitted lead (field worker).
+// Called while the worker is filling in the form, before they take photos.
+router.get('/check-duplicate', workerAuthMiddleware, async (req: WorkerAuthRequest, res: Response) => {
+  try {
+    const phone = String(req.query.phone ?? '').trim();
+    if (!PHONE_PATTERN.test(phone)) {
+      return res.status(400).json({ error: 'Phone number must be exactly 10 digits' });
+    }
+    const duplicate = await findDuplicatePromotion([phone]);
+    if (!duplicate) {
+      return res.json({ exists: false });
+    }
+    res.json({
+      exists: true,
+      message: duplicateMessage(duplicate, req.workerId),
+      duplicate: describeDuplicate(duplicate, req.workerId),
+    });
+  } catch (error) {
+    console.error('Error checking duplicate promotion:', error);
+    res.status(500).json({ error: 'Failed to check phone number' });
   }
 });
 

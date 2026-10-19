@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Camera, CheckCircle2, LogOut, MapPin, Plus, X } from "lucide-react";
+import { AlertTriangle, Camera, CheckCircle2, LogOut, MapPin, Plus, X } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -27,6 +27,41 @@ const EMPTY_FORM = {
   alternate_phone: "",
 };
 
+function DuplicateWarning({ message }: { message: string }) {
+  return (
+    <div className="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+      <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+      <span>{message}</span>
+    </div>
+  );
+}
+
+// Once a full 10-digit number is typed, asks the server whether a lead with that
+// number already exists, and returns the message to show (or null).
+function useDuplicateCheck(phone: string) {
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMessage(null);
+    if (phone.length !== 10) return;
+
+    let cancelled = false;
+    workerPromotions
+      .checkDuplicate(phone)
+      .then((result) => {
+        if (!cancelled) setMessage(result.exists ? result.message ?? "This property is already added" : null);
+      })
+      .catch(() => {
+        // Non-fatal — the server rejects duplicates again on submit.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [phone]);
+
+  return message;
+}
+
 export default function FieldSubmit() {
   const navigate = useNavigate();
   const [worker, setWorker] = useState<{ id: string; name: string; email: string } | null>(null);
@@ -38,6 +73,8 @@ export default function FieldSubmit() {
   const [photos, setPhotos] = useState<string[]>([]);
   const [processingPhotos, setProcessingPhotos] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const phoneDuplicate = useDuplicateCheck(formData.phone);
+  const alternatePhoneDuplicate = useDuplicateCheck(formData.alternate_phone);
 
   useEffect(() => {
     const token = localStorage.getItem("worker_token");
@@ -151,6 +188,10 @@ export default function FieldSubmit() {
     }
     if (formData.alternate_phone && formData.alternate_phone.length !== 10) {
       toast.error("Alternative number must be exactly 10 digits");
+      return;
+    }
+    if (phoneDuplicate || alternatePhoneDuplicate) {
+      toast.error(phoneDuplicate || alternatePhoneDuplicate);
       return;
     }
     if (!location) {
@@ -334,6 +375,7 @@ export default function FieldSubmit() {
                   className="mt-1 h-12"
                   required
                 />
+                {phoneDuplicate && <DuplicateWarning message={phoneDuplicate} />}
               </div>
 
               <div>
@@ -349,6 +391,7 @@ export default function FieldSubmit() {
                   placeholder="Optional"
                   className="mt-1 h-12"
                 />
+                {alternatePhoneDuplicate && <DuplicateWarning message={alternatePhoneDuplicate} />}
               </div>
 
               <div>

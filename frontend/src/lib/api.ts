@@ -275,4 +275,8 @@ export const workerPromotions = {
     const response = await workerApiClient.get('/promotions/count');
     return response.data as { count: number };
   },
+  checkDuplicate: async (phone: string) => {
+    const response = await workerApiClient.get('/promotions/check-duplicate', { params: { phone } });
+    return response.data as { exists: boolean; message?: string };
+  },
 };
