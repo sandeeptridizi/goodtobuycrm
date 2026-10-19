@@ -139,10 +139,26 @@ export default function Promotions() {
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filtered.map((promo) => (
+          {filtered.map((promo) => {
+            const photos = promo.photo_urls?.length ? promo.photo_urls : promo.photo_url ? [promo.photo_url] : [];
+            return (
             <Card key={promo.id} className="overflow-hidden border-[#00AEEF]/10 bg-white/80 backdrop-blur-sm">
-              {promo.photo_url && (
-                <img src={promo.photo_url} alt={promo.property_name} className="w-full h-40 object-cover" />
+              {photos.length > 0 && (
+                <div className="relative">
+                  {/* Swipe or scroll sideways through the photos; click one to open it full size. */}
+                  <div className="flex overflow-x-auto snap-x snap-mandatory">
+                    {photos.map((url, index) => (
+                      <a key={index} href={url} target="_blank" rel="noreferrer" className="w-full flex-shrink-0 snap-center">
+                        <img src={url} alt={`${promo.property_name} ${index + 1}`} className="w-full h-40 object-cover" />
+                      </a>
+                    ))}
+                  </div>
+                  {photos.length > 1 && (
+                    <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/60 text-white text-xs pointer-events-none">
+                      {photos.length} photos
+                    </span>
+                  )}
+                </div>
               )}
               <CardContent className="p-5 space-y-3">
                 <div className="flex items-start justify-between gap-2">
@@ -222,7 +238,8 @@ export default function Promotions() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

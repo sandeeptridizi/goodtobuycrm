@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { Camera, CheckCircle2, LogOut, MapPin } from "lucide-react";
+import { Camera, CheckCircle2, LogOut, MapPin, Plus, X } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { workerPromotions } from "../../../lib/api";
+import { compressImage } from "../../../lib/image";
 import { toast } from "sonner";
 import logo from "../../../assets/GoodToBuy Logo.png";
 
 const FLAT_TYPES = ["Villa", "House", "1 BHK", "2 BHK", "3 BHK", "4 BHK", "Shop", "Commercial Property"];
 const FURNISHING_TYPES = ["Fully Furnished", "Semi Furnished", "Un Furnished"];
+const MAX_PHOTOS = 10;
 
 const EMPTY_FORM = {
   property_name: "",
@@ -33,7 +35,8 @@ export default function FieldSubmit() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState("");
-  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [processingPhotos, setProcessingPhotos] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -94,18 +97,37 @@ export default function FieldSubmit() {
     );
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => setPhotoBase64(reader.result as string);
-    reader.readAsDataURL(file);
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    // Reset so picking the same file again still fires onChange.
+    e.target.value = "";
+    if (files.length === 0) return;
+
+    const remaining = MAX_PHOTOS - photos.length;
+    if (files.length > remaining) {
+      toast.error(`You can add up to ${MAX_PHOTOS} photos`);
+    }
+
+    setProcessingPhotos(true);
+    try {
+      const compressed = await Promise.all(files.slice(0, remaining).map(compressImage));
+      setPhotos((prev) => [...prev, ...compressed].slice(0, MAX_PHOTOS));
+    } catch (err) {
+      console.error("Failed to read photo:", err);
+      toast.error("Could not read one of the photos. Please try again.");
+    } finally {
+      setProcessingPhotos(false);
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   const resetForm = () => {
     setFormData(EMPTY_FORM);
     setLocation(null);
-    setPhotoBase64(null);
+    setPhotos([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,8 +157,8 @@ export default function FieldSubmit() {
       toast.error("Please capture the GPS location");
       return;
     }
-    if (!photoBase64) {
-      toast.error("Please add a photo of the sale board");
+    if (photos.length === 0) {
+      toast.error("Please add at least one photo of the sale board");
       return;
     }
 
@@ -154,7 +176,7 @@ export default function FieldSubmit() {
         alternate_phone: formData.alternate_phone.trim(),
         gps_lat: location.lat,
         gps_lng: location.lng,
-        photo_base64: photoBase64,
+        photos_base64: photos,
       });
       toast.success("Property submitted!");
       resetForm();
@@ -349,29 +371,65 @@ export default function FieldSubmit() {
               </div>
 
               <div>
-                <Label>Photo of the Sale Board *</Label>
-                <label className="mt-1 flex items-center justify-center gap-2 h-32 border-2 border-dashed border-[#00AEEF]/40 rounded-lg cursor-pointer bg-[#00AEEF]/5 overflow-hidden">
-                  {photoBase64 ? (
-                    <img src={photoBase64} alt="Sale board" className="h-full w-full object-cover" />
-                  ) : (
+                <Label>
+                  Photos of the Sale Board *{" "}
+                  <span className="font-normal text-slate-500">
+                    ({photos.length}/{MAX_PHOTOS})
+                  </span>
+                </Label>
+                {photos.length === 0 ? (
+                  <label className="mt-1 flex items-center justify-center gap-2 h-32 border-2 border-dashed border-[#00AEEF]/40 rounded-lg cursor-pointer bg-[#00AEEF]/5">
                     <div className="flex flex-col items-center text-slate-500">
                       <Camera className="w-6 h-6 mb-1" />
-                      <span className="text-sm">Tap to take a photo</span>
+                      <span className="text-sm">
+                        {processingPhotos ? "Adding photos..." : "Tap to add photos"}
+                      </span>
                     </div>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handlePhotoChange}
-                    className="hidden"
-                  />
-                </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handlePhotoChange}
+                      disabled={processingPhotos}
+                      className="hidden"
+                    />
+                  </label>
+                ) : (
+                  <div className="mt-1 grid grid-cols-3 gap-2">
+                    {photos.map((photo, index) => (
+                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200">
+                        <img src={photo} alt={`Sale board ${index + 1}`} className="h-full w-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(index)}
+                          className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white"
+                          aria-label={`Remove photo ${index + 1}`}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                    {photos.length < MAX_PHOTOS && (
+                      <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-[#00AEEF]/40 rounded-lg cursor-pointer bg-[#00AEEF]/5 text-slate-500">
+                        <Plus className="w-6 h-6" />
+                        <span className="text-xs mt-1">{processingPhotos ? "Adding..." : "Add more"}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handlePhotoChange}
+                          disabled={processingPhotos}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                )}
               </div>
 
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || processingPhotos}
                 className="w-full h-12 bg-gradient-to-r from-[#00AEEF] to-[#0096d1] hover:from-[#0096d1] hover:to-[#007bb8] text-white font-semibold shadow-lg shadow-[#00AEEF]/30"
               >
                 {isSubmitting ? "Submitting..." : "Submit Property"}

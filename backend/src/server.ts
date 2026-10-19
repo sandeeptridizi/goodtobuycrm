@@ -19,7 +19,9 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+// Images arrive as base64 (up to 20 per property) and are moved to Cloud Storage
+// by the routes, so requests are large even though the stored documents are not.
+app.use(express.json({ limit: '50mb' }));
 
 // Routes
 app.use('/api/auth', authRoutes);

@@ -3,6 +3,7 @@ import { Request } from 'express';
 import { getAll, getById, getWhere, createDoc, updateDocById, deleteDocById } from '../db/index.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { workerAuthMiddleware, type WorkerAuthRequest } from '../middleware/workerAuth.js';
+import { uploadImages, InvalidImageError } from '../lib/storage.js';
 
 const router = Router();
 
@@ -10,6 +11,7 @@ const FLAT_TYPES = ['Villa', 'House', '1 BHK', '2 BHK', '3 BHK', '4 BHK', 'Shop'
 const FURNISHING_TYPES = ['Fully Furnished', 'Semi Furnished', 'Un Furnished'];
 const STATUSES = ['New', 'Contacted', 'Interested', 'Not Interested', 'Converted'];
 const PHONE_PATTERN = /^\d{10}$/;
+const MAX_PHOTOS = 10;
 
 // Submit a new promotion lead (field worker)
 router.post('/', workerAuthMiddleware, async (req: WorkerAuthRequest, res: Response) => {
@@ -17,8 +19,13 @@ router.post('/', workerAuthMiddleware, async (req: WorkerAuthRequest, res: Respo
     const {
       property_name, flat_no, flat_type, square_feet, furnishing_type,
       address, location_area, phone, alternate_phone,
-      gps_lat, gps_lng, photo_base64,
+      gps_lat, gps_lng, photos_base64, photo_base64,
     } = req.body;
+
+    // Older app versions send a single photo_base64; newer ones send photos_base64.
+    const photos: unknown[] = Array.isArray(photos_base64)
+      ? photos_base64
+      : photo_base64 ? [photo_base64] : [];
 
     if (typeof property_name !== 'string' || property_name.trim() === '') {
       return res.status(400).json({ error: 'Property / Apartment name is required' });
@@ -38,8 +45,21 @@ router.post('/', workerAuthMiddleware, async (req: WorkerAuthRequest, res: Respo
     if (gps_lat === undefined || gps_lat === null || gps_lng === undefined || gps_lng === null) {
       return res.status(400).json({ error: 'GPS location is required' });
     }
-    if (typeof photo_base64 !== 'string' || photo_base64.trim() === '') {
-      return res.status(400).json({ error: 'A photo of the sale board is required' });
+    if (photos.length === 0 || photos.some((p) => typeof p !== 'string' || p.trim() === '')) {
+      return res.status(400).json({ error: 'At least one photo of the sale board is required' });
+    }
+    if (photos.length > MAX_PHOTOS) {
+      return res.status(400).json({ error: `You can upload up to ${MAX_PHOTOS} photos` });
+    }
+
+    let photo_urls: string[];
+    try {
+      photo_urls = await uploadImages(photos, 'promotions');
+    } catch (error) {
+      if (error instanceof InvalidImageError) {
+        return res.status(400).json({ error: 'One of the photos is invalid. Please retake it.' });
+      }
+      throw error;
     }
 
     const promotion = await createDoc('promotions', {
@@ -56,9 +76,9 @@ router.post('/', workerAuthMiddleware, async (req: WorkerAuthRequest, res: Respo
       alternate_phone: alternate_phone ?? null,
       gps_lat: Number(gps_lat),
       gps_lng: Number(gps_lng),
-      // Stored as a base64 data URL directly on the document, same convention
-      // CreateProperty.tsx uses for property images — no separate file storage wired up.
-      photo_url: photo_base64,
+      photo_urls,
+      // First photo doubles as the cover, so anything reading photo_url keeps working.
+      photo_url: photo_urls[0],
       status: 'New',
       commission_amount: 0,
       is_paid: false,

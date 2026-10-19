@@ -17,6 +17,8 @@ export interface Promotion {
   gps_lat: number;
   gps_lng: number;
   photo_url: string;
+  // Absent on leads submitted before multiple photos were supported.
+  photo_urls?: string[];
   status: string;
   commission_amount: number;
   is_paid: boolean;

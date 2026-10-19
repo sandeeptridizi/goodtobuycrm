@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { getAll, getById, createDoc, updateDocById, deleteDocById } from '../db/index.js';
 import { authMiddleware, AuthRequest } from '../middleware/auth.js';
+import { uploadImages, InvalidImageError } from '../lib/storage.js';
 
 const router = Router();
 
@@ -73,7 +74,7 @@ router.post('/', async (req: Request, res: Response) => {
       boundary_wall,
       rental_income: num(rental_income),
       amenities: Array.isArray(amenities) ? amenities : [],
-      images: Array.isArray(images) ? images : [],
+      images: await uploadImages(images, 'properties'),
       youtube_url,
       instagram_url,
       added_by: (req as AuthRequest).userId ?? null,
@@ -85,6 +86,9 @@ router.post('/', async (req: Request, res: Response) => {
     });
     res.status(201).json(property);
   } catch (error) {
+    if (error instanceof InvalidImageError) {
+      return res.status(400).json({ error: 'One of the images is invalid' });
+    }
     console.error('Error creating property:', error);
     res.status(500).json({ error: 'Failed to create property' });
   }
@@ -94,12 +98,19 @@ router.post('/', async (req: Request, res: Response) => {
 router.put('/:id', authMiddleware, async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
-    const property = await updateDocById('properties', id, req.body);
+    const fields = { ...req.body };
+    if ('images' in fields) {
+      fields.images = await uploadImages(fields.images, 'properties');
+    }
+    const property = await updateDocById('properties', id, fields);
     if (!property) {
       return res.status(404).json({ error: 'Property not found' });
     }
     res.json(property);
   } catch (error) {
+    if (error instanceof InvalidImageError) {
+      return res.status(400).json({ error: 'One of the images is invalid' });
+    }
     console.error('Error updating property:', error);
     res.status(500).json({ error: 'Failed to update property' });
   }
